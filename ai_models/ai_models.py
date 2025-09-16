@@ -1,58 +1,51 @@
 import os
+import base64
 from openai import AzureOpenAI
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+      
+endpoint = os.getenv("ENDPOINT_URL", "https://bwoai.openai.azure.com/")
+deployment = os.getenv("DEPLOYMENT_NAME", "gpt-4.1")
+      
+# Initialize Azure OpenAI client with Entra ID authentication
+token_provider = get_bearer_token_provider(
+    DefaultAzureCredential(),
+    "https://cognitiveservices.azure.com/.default"
+)
 
-# Get your current API key
-api_key = os.getenv("AZURE_OPENAI_API_KEY")
-print(f"API Key exists: {api_key is not None}")
+client = AzureOpenAI(
+    azure_endpoint=endpoint,
+    azure_ad_token_provider=token_provider,
+    api_version="2025-01-01-preview",
+)
 
-# Try different endpoints based on your resources
-endpoints_to_test = [
-    "https://bwoai.openai.azure.com/",
-    "https://benchwiseresource.cognitiveservices.azure.com/",
-    "https://bwoai.cognitiveservices.azure.com/",
-    "https://benchwiseresource.openai.azure.com/"
+
+# IMAGE_PATH = "YOUR_IMAGE_PATH"
+# encoded_image = base64.b64encode(open(IMAGE_PATH, 'rb').read()).decode('ascii')
+chat_prompt = [
+    {
+        "role": "system",
+        "content": [
+            {
+                "type": "text",
+                "text": "You are an AI assistant that helps people find information."
+            }
+        ]
+    }
 ]
 
-for endpoint in endpoints_to_test:
-    print(f"\n=== Testing endpoint: {endpoint} ===")
-    
-    try:
-        client = AzureOpenAI(
-            api_key=api_key,
-            azure_endpoint=endpoint,
-            api_version="2024-02-01"
-        )
-        
-        # Try to list models
-        models = client.models.list()
-        print(f"✅ SUCCESS! Connected to {endpoint}")
-        print("Available deployments:")
-        for model in models:
-            print(f"  - {model.id}")
-        
-        # If successful, try a simple completion
-        try:
-            completion = client.chat.completions.create(
-                model=models.data[0].id,  # Use first available model
-                messages=[
-                    {"role": "user", "content": "Hello, this is a test message."}
-                ],
-                max_tokens=50
-            )
-            print(f"✅ Completion test successful!")
-            print(f"Response: {completion.choices[0].message.content}")
-        except Exception as comp_error:
-            print(f"⚠️  Connection works but completion failed: {comp_error}")
-        
-        break  # If we get here, we found the right endpoint
-        
-    except Exception as e:
-        print(f"❌ Failed: {str(e)[:150]}...")
+# Include speech result if speech is enabled
+messages = chat_prompt
 
-print(f"\n=== Next Steps ===")
-print("If none worked, please:")
-print("1. Go to Azure Portal")
-print("2. Search for both 'BWOAI' and 'benchwiseresource'") 
-print("3. Click on each resource")
-print("4. Go to 'Keys and Endpoint'")
-print("5. Share the exact endpoint URL you see there")
+completion = client.chat.completions.create(
+    model=deployment,
+    messages=messages,
+    max_tokens=13107,
+    temperature=0.7,
+    top_p=0.95,
+    frequency_penalty=0,
+    presence_penalty=0,
+    stop=None,
+    stream=False
+)
+
+print(completion.to_json())

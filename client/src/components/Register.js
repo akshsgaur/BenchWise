@@ -64,11 +64,35 @@ function Register() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1 className="auth-title">Join BenchWise</h1>
-          <p className="auth-subtitle">Create your account to get started</p>
+      <div className="auth-left">
+        <div className="auth-left-content">
+          <h1 className="auth-left-title">Join BenchWise</h1>
+          <p className="auth-left-subtitle">
+            Start your journey to financial freedom with our comprehensive investment platform
+          </p>
+          <div className="auth-left-features">
+            <div className="auth-left-feature">
+              <div className="auth-left-feature-icon">📈</div>
+              <span>Real-time market data and portfolio analytics</span>
+            </div>
+            <div className="auth-left-feature">
+              <div className="auth-left-feature-icon">🎯</div>
+              <span>Personalized investment strategies and recommendations</span>
+            </div>
+            <div className="auth-left-feature">
+              <div className="auth-left-feature-icon">💼</div>
+              <span>Professional-grade tools for serious investors</span>
+            </div>
+          </div>
         </div>
+      </div>
+      
+      <div className="auth-right">
+        <div className="auth-card">
+          <div className="auth-header">
+            <h1 className="auth-title">Create Account</h1>
+            <p className="auth-subtitle">Fill in your details to get started</p>
+          </div>
 
         <form onSubmit={handleSubmit}>
           <div className="form-section">
@@ -180,13 +204,14 @@ function Register() {
           </button>
         </div>
 
-        <div className="auth-footer">
-          <p>
-            Already have an account?{' '}
-            <Link to="/login" className="auth-link">
-              Sign in
-            </Link>
-          </p>
+          <div className="auth-footer">
+            <p>
+              Already have an account?{' '}
+              <Link to="/login" className="auth-link">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

@@ -66,9 +66,18 @@ const register = async (req, res) => {
       });
     }
 
+    // Handle Mongo duplicate key errors explicitly
+    if (error && error.code === 11000) {
+      return res.status(400).json({
+        message: 'Email or username already exists',
+        keyValue: error.keyValue
+      });
+    }
+
     console.error('Registration error:', error);
     res.status(500).json({
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error?.message || 'Unknown error'
     });
   }
 };

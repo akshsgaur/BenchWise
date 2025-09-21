@@ -45,4 +45,11 @@ export const authAPI = {
   microsoftAuth: () => window.open(`${API_BASE_URL}/auth/microsoft`, '_self'),
 };
 
+export const plaidAPI = {
+  createLinkToken: () => api.post('/plaid/link'),
+  exchangePublicToken: (publicToken) => api.post('/plaid/exchange', { public_token: publicToken }),
+  getAccounts: () => api.get('/plaid/accounts'),
+  getIntegrationStatus: () => api.get('/plaid/status'),
+};
+
 export default api;

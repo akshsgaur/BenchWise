@@ -1,0 +1,231 @@
+.investment-tracking {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.tracking-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.tracking-header h2 {
+  font-size: 32px;
+  font-weight: 300;
+  color: #000000;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.tracking-header p {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.portfolio-summary {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 32px;
+  margin-bottom: 40px;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  align-items: center;
+}
+
+.portfolio-value h3 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.value-amount {
+  font-size: 48px;
+  font-weight: 300;
+  color: #000000;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+}
+
+.value-change {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.value-change.positive {
+  color: #059669;
+}
+
+.value-change.negative {
+  color: #dc2626;
+}
+
+.portfolio-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 16px;
+  color: #000000;
+  font-weight: 500;
+}
+
+.holdings-section {
+  margin-bottom: 40px;
+}
+
+.holdings-section h3 {
+  font-size: 24px;
+  font-weight: 300;
+  color: #000000;
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
+}
+
+.empty-state {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 60px 40px;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state h4 {
+  font-size: 20px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.connect-btn {
+  background: #000000;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.connect-btn:hover {
+  background: #374151;
+}
+
+.market-insights h3 {
+  font-size: 24px;
+  font-weight: 300;
+  color: #000000;
+  margin-bottom: 24px;
+  letter-spacing: -0.01em;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.insight-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.insight-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.insight-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+
+.insight-card h4 {
+  font-size: 18px;
+  font-weight: 500;
+  color: #000000;
+  margin-bottom: 8px;
+}
+
+.insight-card p {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .portfolio-summary {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .value-amount {
+    font-size: 36px;
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .investment-tracking {
+    padding: 0 16px;
+  }
+  
+  .portfolio-summary {
+    padding: 24px;
+  }
+  
+  .empty-state {
+    padding: 40px 24px;
+  }
+  
+  .insight-card {
+    padding: 20px;
+  }
+}

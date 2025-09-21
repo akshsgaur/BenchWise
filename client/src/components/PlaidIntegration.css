@@ -1,8 +1,18 @@
 .plaid-integration {
-  max-width: 600px;
+  width: 100%;
+  padding: 0;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  min-height: 600px;
+}
+
+.plaid-container {
+  display: flex;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 40px;
-  text-align: center;
+  flex: 1;
+  min-height: 600px;
 }
 
 .plaid-loading {
@@ -28,40 +38,36 @@
   100% { transform: rotate(360deg); }
 }
 
+/* Left Side Styles */
+.plaid-left {
+  flex: 1;
+  padding: 40px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .plaid-header {
   margin-bottom: 40px;
+  text-align: left;
 }
 
-.plaid-icon {
-  width: 64px;
-  height: 64px;
-  background: #f9fafb;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 24px;
-  color: #000000;
-}
-
-.bank-icon {
-  font-size: 32px;
-}
-
-.plaid-header h2 {
-  font-size: 28px;
+.plaid-header h1 {
+  font-size: 40px;
   font-weight: 300;
   color: #000000;
   margin-bottom: 12px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .plaid-header p {
-  font-size: 16px;
+  font-size: 18px;
   color: #6b7280;
   line-height: 1.6;
-  max-width: 480px;
-  margin: 0 auto;
+  max-width: 500px;
+  margin: 0;
 }
 
 .plaid-error {
@@ -95,52 +101,90 @@
 }
 
 .plaid-benefits {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  margin-bottom: 40px;
-  text-align: left;
 }
 
 .plaid-benefit {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  gap: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: none;
+}
+
+.plaid-benefit:hover {
+  box-shadow: none;
+  transform: none;
 }
 
 .plaid-benefit-icon {
   font-size: 24px;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
   flex-shrink: 0;
 }
 
-.plaid-benefit h4 {
-  font-size: 16px;
-  font-weight: 500;
+.plaid-benefit-content h3 {
+  font-size: 18px;
+  font-weight: 600;
   color: #000000;
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.01em;
 }
 
-.plaid-benefit p {
-  font-size: 14px;
+.plaid-benefit-content p {
+  font-size: 15px;
   color: #6b7280;
   margin: 0;
   line-height: 1.5;
+  max-width: 400px;
 }
 
-.plaid-connect {
-  margin-top: 32px;
+/* Right Side Styles */
+.plaid-right {
+  flex: 1;
+  padding: 40px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plaid-connect-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.plaid-connect-card h2 {
+  font-size: 28px;
+  font-weight: 300;
+  color: #000000;
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.plaid-connect-card > p {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 32px;
 }
 
 .plaid-connect-btn {
@@ -148,41 +192,101 @@
   color: white;
   border: none;
   padding: 14px 32px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 16px;
-  min-width: 200px;
+  margin-bottom: 24px;
+  width: 100%;
+  min-height: 48px;
 }
 
 .plaid-connect-btn:hover:not(:disabled) {
   background: #374151;
+  transform: translateY(-1px);
 }
 
 .plaid-connect-btn:disabled {
   background: #9ca3af;
   cursor: not-allowed;
+  transform: none;
+}
+
+.plaid-features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.plaid-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.feature-check {
+  color: #10b981;
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .plaid-disclaimer {
   font-size: 12px;
   color: #9ca3af;
   line-height: 1.5;
-  max-width: 400px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 /* Responsive Design */
-@media (min-width: 768px) {
-  .plaid-benefits {
-    grid-template-columns: 1fr 1fr;
+@media (max-width: 1024px) {
+  .plaid-container {
+    flex-direction: column;
+  }
+  
+  .plaid-left {
+    padding: 30px 20px;
+  }
+  
+  .plaid-right {
+    padding: 30px 20px;
+  }
+  
+  .plaid-header h1 {
+    font-size: 32px;
+  }
+  
+  .plaid-header p {
+    font-size: 16px;
   }
 }
 
-@media (min-width: 1024px) {
-  .plaid-benefits {
-    grid-template-columns: 1fr 1fr 1fr;
+@media (max-width: 768px) {
+  .plaid-left {
+    padding: 24px 20px;
+  }
+  
+  .plaid-right {
+    padding: 24px 20px;
+  }
+  
+  .plaid-connect-card {
+    padding: 28px 20px;
+  }
+  
+  .plaid-header h1 {
+    font-size: 28px;
+  }
+  
+  .plaid-header p {
+    font-size: 15px;
+  }
+  
+  .plaid-connect-card h2 {
+    font-size: 24px;
   }
 }

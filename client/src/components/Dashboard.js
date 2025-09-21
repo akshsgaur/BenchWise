@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { plaidAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import FinancialOverview from './FinancialOverview';
@@ -8,6 +9,7 @@ import SubscriptionsOverview from './SubscriptionsOverview';
 
 function Dashboard() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [integrationStatus, setIntegrationStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -15,6 +17,19 @@ function Dashboard() {
   useEffect(() => {
     checkIntegrationStatus();
   }, []);
+
+  // Prevent going back to login page
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // If user tries to go back and we're on dashboard, stay on dashboard
+      if (window.location.pathname === '/dashboard') {
+        navigate('/dashboard', { replace: true });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]);
 
   const checkIntegrationStatus = async () => {
     try {
@@ -59,25 +74,6 @@ function Dashboard() {
       <div className="container">
         <div className="dashboard-header">
           <h1 className="dashboard-title">Dashboard</h1>
-          <div className="user-info">
-            <div className="user-avatar">
-              {user?.firstName?.[0] || user?.username?.[0] || 'U'}
-            </div>
-            <div>
-              <div className="user-name">
-                {user?.firstName && user?.lastName 
-                  ? `${user.firstName} ${user.lastName}`
-                  : user?.username || user?.email
-                }
-              </div>
-              <div style={{ fontSize: '14px', color: '#666' }}>
-                {user?.email}
-              </div>
-            </div>
-            <button className="logout-btn" onClick={handleLogout}>
-              Logout
-            </button>
-          </div>
         </div>
 
         {!integrationStatus?.isIntegrated ? (

@@ -171,45 +171,11 @@ const googleCallback = async (req, res) => {
   }
 };
 
-// Microsoft OAuth callback
-const microsoftCallback = async (req, res) => {
-  try {
-    const { user } = req;
-    
-    // Update last login
-    user.lastLogin = new Date();
-    await user.save();
-
-    // Generate token
-    const token = generateToken(user._id);
-
-    // Redirect to frontend with token
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
-  } catch (error) {
-    console.error('Microsoft OAuth error:', error);
-    res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
-  }
-};
 
 // Get current user
 const getCurrentUser = async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    
-    if (!token) {
-      return res.status(401).json({
-        message: 'No token provided'
-      });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-
-    if (!user) {
-      return res.status(404).json({
-        message: 'User not found'
-      });
-    }
+    const { user } = req;
 
     res.json({
       user: {
@@ -218,13 +184,90 @@ const getCurrentUser = async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        profilePicture: user.profilePicture
+        phone: user.phone,
+        profilePicture: user.profilePicture,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {
     console.error('Get current user error:', error);
-    res.status(401).json({
-      message: 'Invalid token'
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Update user profile
+const updateProfile = async (req, res) => {
+  try {
+    const { user } = req;
+    const { firstName, lastName, phone, username } = req.body;
+
+    // Validation
+    if (username && username.length < 3) {
+      return res.status(400).json({
+        message: 'Username must be at least 3 characters long'
+      });
+    }
+
+    // Check if username is already taken by another user
+    if (username && username !== user.username) {
+      const existingUser = await User.findOne({ 
+        username, 
+        _id: { $ne: user._id } 
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({
+          message: 'Username already taken'
+        });
+      }
+    }
+
+    // Update user fields
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (phone !== undefined) user.phone = phone;
+    if (username !== undefined) user.username = username;
+
+    await user.save();
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        profilePicture: user.profilePicture,
+        createdAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      message: 'Internal server error'
+    });
+  }
+};
+
+// Delete user account
+const deleteAccount = async (req, res) => {
+  try {
+    const { user } = req;
+
+    // Delete user from database
+    await User.findByIdAndDelete(user._id);
+
+    res.json({
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      message: 'Internal server error'
     });
   }
 };
@@ -234,6 +277,7 @@ module.exports = {
   login,
   logout,
   googleCallback,
-  microsoftCallback,
-  getCurrentUser
+  getCurrentUser,
+  updateProfile,
+  deleteAccount
 };

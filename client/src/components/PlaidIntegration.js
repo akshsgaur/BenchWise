@@ -67,70 +67,90 @@ function PlaidIntegration({ onIntegrationComplete }) {
 
   return (
     <div className="plaid-integration">
-      <div className="plaid-header">
-        <div className="plaid-icon">
-          <div className="bank-icon">🏦</div>
-        </div>
-        <h2>Connect Your Bank Account</h2>
-        <p>BenchWise uses Plaid to securely link your bank account and provide comprehensive financial insights</p>
-      </div>
+      <div className="plaid-container">
+        {/* Left Side - Benefits and Information */}
+        <div className="plaid-left">
+          <div className="plaid-header">
+            <h1>Connect Your Banks</h1>
+            <p>BenchWise uses Plaid to securely link your bank accounts and provide comprehensive financial insights</p>
+          </div>
 
-      {error && (
-        <div className="plaid-error">
-          <p>{error}</p>
-          <button onClick={createLinkToken} className="plaid-retry-btn">
-            Try Again
-          </button>
+          <div className="plaid-benefits">
+            <div className="plaid-benefit">
+              <div className="plaid-benefit-icon">
+                <div className="security-icon">🔒</div>
+              </div>
+              <div className="plaid-benefit-content">
+                <h3>Bank-Level Security</h3>
+                <p>Your data is encrypted and never stored on our servers. We use industry-standard security protocols to protect your financial information.</p>
+              </div>
+            </div>
+            <div className="plaid-benefit">
+              <div className="plaid-benefit-icon">
+                <div className="data-icon">📊</div>
+              </div>
+              <div className="plaid-benefit-content">
+                <h3>Real-Time Data</h3>
+                <p>Get up-to-date account balances, transaction history, and financial data directly from your bank in real-time.</p>
+              </div>
+            </div>
+            <div className="plaid-benefit">
+              <div className="plaid-benefit-icon">
+                <div className="insights-icon">🎯</div>
+              </div>
+              <div className="plaid-benefit-content">
+                <h3>Smart Insights</h3>
+                <p>AI-powered analysis of your spending patterns, investment tracking, and personalized financial recommendations.</p>
+              </div>
+            </div>
+          </div>
         </div>
-      )}
 
-      <div className="plaid-benefits">
-        <div className="plaid-benefit">
-          <div className="plaid-benefit-icon">
-            <div className="security-icon">🔒</div>
-          </div>
-          <div>
-            <h4>Bank-Level Security</h4>
-            <p>Your data is encrypted and never stored on our servers</p>
-          </div>
-        </div>
-        <div className="plaid-benefit">
-          <div className="plaid-benefit-icon">
-            <div className="data-icon">📊</div>
-          </div>
-          <div>
-            <h4>Real-Time Data</h4>
-            <p>Get up-to-date account balances and transaction history</p>
-          </div>
-        </div>
-        <div className="plaid-benefit">
-          <div className="plaid-benefit-icon">
-            <div className="insights-icon">🎯</div>
-          </div>
-          <div>
-            <h4>Smart Insights</h4>
-            <p>AI-powered analysis of your spending and investment patterns</p>
-          </div>
-        </div>
-      </div>
+        {/* Right Side - Connection Interface */}
+        <div className="plaid-right">
+          <div className="plaid-connect-card">
+            <h2>Get Started</h2>
+            <p>Connect your bank account to unlock powerful financial insights and tracking capabilities.</p>
 
-      <div className="plaid-connect">
-        <button
-          className="plaid-connect-btn"
-          onClick={() => {
-            // This would normally open Plaid Link
-            // For now, we'll simulate the success
-            const mockPublicToken = 'mock-public-token-' + Date.now();
-            handlePlaidSuccess(mockPublicToken);
-          }}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Connecting...' : 'Connect Bank Account'}
-        </button>
-        <p className="plaid-disclaimer">
-          By connecting your account, you agree to our Terms of Service and Privacy Policy.
-          Your bank credentials are never shared with BenchWise.
-        </p>
+            {error && (
+              <div className="plaid-error">
+                <p>{error}</p>
+                <button onClick={createLinkToken} className="plaid-retry-btn">
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            <button
+              className="plaid-connect-btn"
+              onClick={() => {
+                // This would normally open Plaid Link
+                // For now, we'll simulate the success
+                const mockPublicToken = 'mock-public-token-' + Date.now();
+                handlePlaidSuccess(mockPublicToken);
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Connecting...' : 'Connect Bank Account'}
+            </button>
+
+            <div className="plaid-features">
+              <div className="plaid-feature">
+                <span className="feature-check">✓</span>
+                <span>Read-only access</span>
+              </div>
+              <div className="plaid-feature">
+                <span className="feature-check">✓</span>
+                <span>256-bit encryption</span>
+              </div>
+            </div>
+
+            <p className="plaid-disclaimer">
+              By connecting your account, you agree to our Terms of Service and Privacy Policy.
+              Your bank credentials are never shared with BenchWise.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

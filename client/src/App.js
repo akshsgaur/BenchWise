@@ -5,6 +5,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import AuthCallback from './components/AuthCallback';
+import Footer from './components/Footer';
 import './App.css';
 
 function ProtectedRoute({ children }) {
@@ -40,7 +41,10 @@ function App() {
   return (
     <AuthProvider>
       <div className="App">
-        <AppRoutes />
+        <div className="App-content">
+          <AppRoutes />
+        </div>
+        <Footer />
       </div>
     </AuthProvider>
   );

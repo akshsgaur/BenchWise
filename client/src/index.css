@@ -26,51 +26,66 @@ code {
 
 .btn {
   padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
   display: inline-block;
   text-align: center;
+  background: #ffffff;
+  color: #000000;
+}
+
+.btn:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: #000000;
   color: white;
+  border-color: #000000;
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: #374151;
+  border-color: #374151;
 }
 
 .btn-secondary {
-  background-color: #6c757d;
+  background-color: #6b7280;
   color: white;
+  border-color: #6b7280;
 }
 
 .btn-secondary:hover {
-  background-color: #545b62;
+  background-color: #4b5563;
+  border-color: #4b5563;
 }
 
 .btn-google {
-  background-color: #db4437;
-  color: white;
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #e5e7eb;
 }
 
 .btn-google:hover {
-  background-color: #c23321;
+  background-color: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .btn-microsoft {
-  background-color: #0078d4;
-  color: white;
+  background-color: #ffffff;
+  color: #000000;
+  border-color: #e5e7eb;
 }
 
 .btn-microsoft:hover {
-  background-color: #106ebe;
+  background-color: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .form-group {
@@ -79,35 +94,47 @@ code {
 
 .form-label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #333;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #000000;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .form-input {
   width: 100%;
-  padding: 12px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 0.2s ease;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  color: #000000;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
 }
 
 .error-message {
-  color: #dc3545;
-  font-size: 14px;
-  margin-top: 8px;
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 500;
 }
 
 .success-message {
-  color: #28a745;
-  font-size: 14px;
-  margin-top: 8px;
+  color: #059669;
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 500;
 }
 
 .card {
@@ -131,7 +158,11 @@ code {
   text-align: center;
   margin: 24px 0;
   position: relative;
-  color: #666;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .divider::before {
@@ -141,7 +172,7 @@ code {
   left: 0;
   right: 0;
   height: 1px;
-  background-color: #ddd;
+  background-color: #e5e7eb;
   z-index: 1;
 }
 
@@ -155,8 +186,8 @@ code {
 .oauth-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
+  gap: 8px;
+  margin-top: 24px;
 }
 
 .oauth-button {
@@ -164,22 +195,23 @@ code {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  padding: 12px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  background: white;
-  color: #333;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #000000;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 13px;
   transition: all 0.2s ease;
 }
 
 .oauth-button:hover {
-  border-color: #007bff;
-  background-color: #f8f9fa;
+  border-color: #d1d5db;
+  background-color: #f9fafb;
 }
 
 .oauth-icon {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }

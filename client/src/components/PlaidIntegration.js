@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { usePlaidLink } from 'react-plaid-link';
+import PropTypes from 'prop-types';
 import { plaidAPI } from '../services/api';
 import './PlaidIntegration.css';
 
@@ -15,9 +17,10 @@ function PlaidIntegration({ onIntegrationComplete }) {
     try {
       setIsLoading(true);
       setError('');
-      // For now, simulate successful token creation
-      // In production, this would call the actual Plaid API
-      setLinkToken('mock-link-token');
+      console.log('Creating link token...');
+      const response = await plaidAPI.createLinkToken();
+      console.log('Link token response:', response.data);
+      setLinkToken(response.data.link_token);
     } catch (error) {
       console.error('Error creating link token:', error);
       setError('Failed to initialize bank connection. Please try again.');
@@ -31,16 +34,8 @@ function PlaidIntegration({ onIntegrationComplete }) {
       setIsLoading(true);
       setError('');
       
-      // For now, simulate successful integration
-      // In production, this would call the actual Plaid API
-      const mockIntegration = {
-        isIntegrated: true,
-        hasPlaid: true,
-        institutionName: 'Chase Bank',
-        accountsCount: 2
-      };
-      
-      onIntegrationComplete(mockIntegration);
+      const response = await plaidAPI.exchangePublicToken(publicToken);
+      onIntegrationComplete(response.data.integration);
     } catch (error) {
       console.error('Error exchanging public token:', error);
       setError('Failed to connect your bank account. Please try again.');
@@ -55,6 +50,15 @@ function PlaidIntegration({ onIntegrationComplete }) {
       setError('Bank connection was cancelled or failed. Please try again.');
     }
   };
+
+  // Configure Plaid Link
+  const config = {
+    token: linkToken,
+    onSuccess: handlePlaidSuccess,
+    onExit: handlePlaidExit,
+  };
+
+  const { open, ready } = usePlaidLink(config);
 
   if (isLoading && !linkToken) {
     return (
@@ -121,18 +125,15 @@ function PlaidIntegration({ onIntegrationComplete }) {
               </div>
             )}
 
-            <button
-              className="plaid-connect-btn"
-              onClick={() => {
-                // This would normally open Plaid Link
-                // For now, we'll simulate the success
-                const mockPublicToken = 'mock-public-token-' + Date.now();
-                handlePlaidSuccess(mockPublicToken);
-              }}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Connecting...' : 'Connect Bank Account'}
-            </button>
+            {linkToken && (
+              <button
+                className="plaid-connect-btn"
+                onClick={() => open()}
+                disabled={!ready || isLoading}
+              >
+                {isLoading ? 'Connecting...' : 'Connect Bank Account'}
+              </button>
+            )}
 
             <div className="plaid-features">
               <div className="plaid-feature">
@@ -157,3 +158,7 @@ function PlaidIntegration({ onIntegrationComplete }) {
 }
 
 export default PlaidIntegration;
+
+PlaidIntegration.propTypes = {
+  onIntegrationComplete: PropTypes.func.isRequired,
+};

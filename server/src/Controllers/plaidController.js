@@ -3,9 +3,9 @@ const Integration = require('../Models/Integration');
 const User = require('../Models/User');
 const jwt = require('jsonwebtoken');
 
-// Initialize Plaid client
+// Initialize Plaid client with proper configuration
 const configuration = new Configuration({
-  basePath: PlaidEnvironments.sandbox, // Use sandbox for development
+  basePath: process.env.PLAID_ENV === 'production' ? PlaidEnvironments.production : PlaidEnvironments.sandbox,
   baseOptions: {
     headers: {
       'PLAID-CLIENT-ID': process.env.PLAID_CLIENT_ID,
@@ -15,6 +15,20 @@ const configuration = new Configuration({
 });
 
 const plaidClient = new PlaidApi(configuration);
+
+// Debug: Log the actual values being used
+console.log('Plaid Configuration Debug:');
+console.log('PLAID_CLIENT_ID:', process.env.PLAID_CLIENT_ID);
+console.log('PLAID_SECRET:', process.env.PLAID_SECRET ? 'Set (length: ' + process.env.PLAID_SECRET.length + ')' : 'Not set');
+console.log('PLAID_ENV:', process.env.PLAID_ENV);
+
+// Validate required environment variables
+if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
+  console.error('ERROR: Missing required Plaid environment variables!');
+  console.error('PLAID_CLIENT_ID:', process.env.PLAID_CLIENT_ID ? 'Set' : 'MISSING');
+  console.error('PLAID_SECRET:', process.env.PLAID_SECRET ? 'Set' : 'MISSING');
+  console.error('Please check your .env file in the server directory');
+}
 
 // Middleware to get user from token
 const getCurrentUser = async (req, res, next) => {
@@ -42,19 +56,31 @@ const getCurrentUser = async (req, res, next) => {
 const createLinkToken = async (req, res) => {
   try {
     const { user } = req;
+    
+    console.log('Creating link token for user:', user._id);
+    console.log('Plaid Client ID:', process.env.PLAID_CLIENT_ID ? 'Set' : 'Not set');
+    console.log('Plaid Secret:', process.env.PLAID_SECRET ? 'Set' : 'Not set');
+    console.log('Plaid Environment:', process.env.PLAID_ENV);
 
     const request = {
       user: {
         client_user_id: user._id.toString(),
       },
       client_name: 'BenchWise',
-      products: ['transactions', 'accounts', 'investments'],
+      products: ['transactions', 'auth', 'investments'],
       country_codes: ['US'],
       language: 'en',
+      // Include credentials in request body as alternative to headers
+      client_id: process.env.PLAID_CLIENT_ID,
+      secret: process.env.PLAID_SECRET,
+      // Disable phone verification for sandbox testing
+      webhook: null,
+      update: null,
     };
 
     const response = await plaidClient.linkTokenCreate(request);
     
+    console.log('Link token created successfully');
     res.json({
       link_token: response.data.link_token,
       expiration: response.data.expiration

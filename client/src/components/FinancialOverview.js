@@ -25,7 +25,8 @@ function FinancialOverview() {
   };
 
   const getTotalBalance = () => {
-    return accounts.reduce((total, account) => total + (account.balance.current || 0), 0);
+    if (!accounts || !Array.isArray(accounts)) return 0;
+    return accounts.reduce((total, account) => total + (account.balance?.current || 0), 0);
   };
 
   const formatCurrency = (amount) => {
@@ -92,13 +93,13 @@ function FinancialOverview() {
           <div className="balance-item">
             <span className="balance-label">Available</span>
             <span className="balance-value">
-              {formatCurrency(accounts.reduce((total, account) => 
-                total + (account.balance.available || 0), 0))}
+              {formatCurrency(accounts && Array.isArray(accounts) ? accounts.reduce((total, account) => 
+                total + (account.balance?.available || 0), 0) : 0)}
             </span>
           </div>
           <div className="balance-item">
             <span className="balance-label">Accounts</span>
-            <span className="balance-value">{accounts.length}</span>
+            <span className="balance-value">{accounts ? accounts.length : 0}</span>
           </div>
         </div>
       </div>
@@ -106,7 +107,7 @@ function FinancialOverview() {
       <div className="accounts-section">
         <h3>Your Accounts</h3>
         <div className="accounts-grid">
-          {accounts.map((account) => (
+          {accounts && Array.isArray(accounts) ? accounts.map((account) => (
             <div key={account.accountId} className="account-card">
               <div className="account-header">
                 <div className="account-icon">
@@ -126,7 +127,7 @@ function FinancialOverview() {
                 </div>
               </div>
             </div>
-          ))}
+          )) : null}
         </div>
       </div>
 

@@ -10,6 +10,14 @@ const plaidRoutes = require('./Routes/plaidRoutes');
 // Load environment variables
 dotenv.config();
 
+// Debug: Check if .env is loaded
+console.log('Environment check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('PLAID_CLIENT_ID:', process.env.PLAID_CLIENT_ID ? 'Set' : 'Not set');
+console.log('PLAID_SECRET:', process.env.PLAID_SECRET ? 'Set' : 'Not set');
+console.log('PLAID_ENV:', process.env.PLAID_ENV);
+
 // Import passport configuration
 require('./Config/passport');
 

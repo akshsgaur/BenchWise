@@ -285,7 +285,7 @@ function FinancialOverview() {
                         </tr>
                       </thead>
                       <tbody>
-                        {transactions.slice(0, 5).map((transaction) => (
+                        {(transactions.length <= 20 ? transactions : transactions.slice(0, 20)).map((transaction) => (
                           <tr key={transaction.transaction_id}>
                             <td className="transaction-date">
                               {new Date(transaction.date).toLocaleDateString()}
@@ -306,9 +306,9 @@ function FinancialOverview() {
                         ))}
                       </tbody>
                     </table>
-                    {transactions.length > 5 && (
+                    {transactions.length > 20 && (
                       <div className="transaction-more">
-                        ... and {transactions.length - 5} more transactions
+                        ... and {transactions.length - 20} more transactions
                       </div>
                     )}
                   </div>

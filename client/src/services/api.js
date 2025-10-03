@@ -50,6 +50,10 @@ export const plaidAPI = {
   exchangePublicToken: (publicToken) => api.post('/plaid/exchange', { public_token: publicToken }),
   getAccounts: () => api.get('/plaid/accounts'),
   getIntegrationStatus: () => api.get('/plaid/status'),
+  getTransactions: (institutionId, startDate, endDate) => 
+    api.get('/plaid/transactions', { 
+      params: { institutionId, startDate, endDate } 
+    }),
 };
 
 export default api;

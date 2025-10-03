@@ -8,5 +8,6 @@ router.post('/link', plaidController.createLinkToken);
 router.post('/exchange', plaidController.exchangePublicToken);
 router.get('/accounts', plaidController.getAccounts);
 router.get('/status', plaidController.getIntegrationStatus);
+router.get('/transactions', plaidController.getTransactions);
 
 module.exports = router;

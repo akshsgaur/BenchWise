@@ -47,12 +47,12 @@ export const authAPI = {
 
 export const plaidAPI = {
   createLinkToken: () => api.post('/plaid/link'),
-  exchangePublicToken: (publicToken) => api.post('/plaid/exchange', { public_token: publicToken }),
-  getAccounts: () => api.get('/plaid/accounts'),
-  getIntegrationStatus: () => api.get('/plaid/status'),
+  exchangePublicToken: (publicToken) => api.post('/integration/exchange', { public_token: publicToken }),
+  getAccounts: () => api.get('/integration/accounts'),
+  getIntegrationStatus: () => api.get('/integration/status'),
   getTransactions: (institutionId, startDate, endDate) => 
-    api.get('/plaid/transactions', { 
-      params: { institutionId, startDate, endDate } 
+    api.post('/integration/transactions', { 
+      institutionId, startDate, endDate 
     }),
 };
 

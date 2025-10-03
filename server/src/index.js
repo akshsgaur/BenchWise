@@ -6,6 +6,7 @@ const session = require('express-session');
 const passport = require('passport');
 const authRoutes = require('./Routes/authRoutes');
 const plaidRoutes = require('./Routes/plaidRoutes');
+const integrationRoutes = require('./Routes/integrationRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -58,6 +59,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/plaid', plaidRoutes);
+app.use('/api/integration', integrationRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

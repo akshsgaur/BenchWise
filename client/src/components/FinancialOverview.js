@@ -11,10 +11,19 @@ function FinancialOverview() {
   const [bankConnections, setBankConnections] = useState([]);
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
   const [spendingPeriod, setSpendingPeriod] = useState('last-30-days');
+  const [transactions, setTransactions] = useState([]);
+  const [transactionsLoading, setTransactionsLoading] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
   }, []);
+
+  // Fetch transactions when bank connections are available
+  useEffect(() => {
+    if (bankConnections.length > 0) {
+      fetchTransactions(transactionsPeriod);
+    }
+  }, [bankConnections]);
 
   const fetchAccounts = async () => {
     try {
@@ -33,6 +42,48 @@ function FinancialOverview() {
   const handleBankConnectionComplete = () => {
     setShowAddBank(false);
     fetchAccounts(); // Refresh the accounts list
+  };
+
+  const fetchTransactions = async (period) => {
+    if (!bankConnections.length) return;
+    
+    try {
+      setTransactionsLoading(true);
+      
+      // Calculate date range based on selected period
+      const endDate = new Date().toISOString().split('T')[0];
+      let startDate;
+      
+      switch (period) {
+        case 'last-7-days':
+          startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last-30-days':
+          startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        case 'last-60-days':
+          startDate = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          break;
+        default:
+          startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      }
+
+      // Fetch transactions from the first connected bank (you can modify this logic)
+      const institutionId = bankConnections[0].institutionId;
+      const response = await plaidAPI.getTransactions(institutionId, startDate, endDate);
+      
+      setTransactions(response.data.transactions || []);
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      setTransactions([]);
+    } finally {
+      setTransactionsLoading(false);
+    }
+  };
+
+  const handleTransactionsPeriodChange = (value) => {
+    setTransactionsPeriod(value);
+    fetchTransactions(value);
   };
 
   const getTotalBalance = () => {
@@ -203,7 +254,7 @@ function FinancialOverview() {
               <div className="period-selector">
                 <select 
                   value={transactionsPeriod} 
-                  onChange={(e) => setTransactionsPeriod(e.target.value)}
+                  onChange={(e) => handleTransactionsPeriodChange(e.target.value)}
                   className="period-dropdown"
                 >
                   <option value="last-7-days">Last 7 days</option>
@@ -213,9 +264,60 @@ function FinancialOverview() {
               </div>
             </div>
             <div className="widget-content">
-              <div className="no-data-message">
-                No data available
-              </div>
+              {transactionsLoading ? (
+                <div className="transactions-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Loading transactions...</span>
+                </div>
+              ) : transactions.length > 0 ? (
+                <div className="transactions-table-container">
+                  <div className="transactions-info">
+                    <span>{transactions.length} transactions found</span>
+                  </div>
+                  <div className="transactions-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Description</th>
+                          <th>Category</th>
+                          <th>Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transactions.slice(0, 5).map((transaction) => (
+                          <tr key={transaction.transaction_id}>
+                            <td className="transaction-date">
+                              {new Date(transaction.date).toLocaleDateString()}
+                            </td>
+                            <td className="transaction-description">
+                              <div className="transaction-name">{transaction.name}</div>
+                              {transaction.merchant_name && (
+                                <div className="transaction-merchant">{transaction.merchant_name}</div>
+                              )}
+                            </td>
+                            <td className="transaction-category">
+                              {transaction.category && transaction.category.join(' > ')}
+                            </td>
+                            <td className={`transaction-amount ${transaction.amount < 0 ? 'expense' : 'income'}`}>
+                              {transaction.amount < 0 ? '-' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {transactions.length > 5 && (
+                      <div className="transaction-more">
+                        ... and {transactions.length - 5} more transactions
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="no-data-message">
+                  No transactions found for this period
+                </div>
+              )}
             </div>
           </div>
 

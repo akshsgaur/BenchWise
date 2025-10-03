@@ -302,9 +302,88 @@ const getIntegrationStatus = async (req, res) => {
   }
 };
 
+// Get transactions data for a bank connection
+const getTransactions = async (req, res) => {
+  try {
+    const { user } = req;
+    const { institutionId, startDate, endDate } = req.query;
+
+    if (!institutionId) {
+      return res.status(400).json({ message: 'Institution ID is required' });
+    }
+
+    const integration = await Integration.findOne({ userId: user._id });
+    
+    if (!integration || !integration.plaid.isIntegrated) {
+      return res.status(404).json({ message: 'No bank integration found' });
+    }
+
+    // Find the specific bank connection
+    const bankConnection = integration.plaid.bankConnections.find(
+      conn => conn.institutionId === institutionId
+    );
+
+    if (!bankConnection) {
+      return res.status(404).json({ message: 'Bank connection not found' });
+    }
+
+    // Set default date range if not provided (last 30 days)
+    const end_date = endDate || new Date().toISOString().split('T')[0];
+    const start_date = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    console.log(`Fetching transactions for institution ${institutionId} from ${start_date} to ${end_date}`);
+
+    // Get transactions from Plaid
+    const transactionsResponse = await plaidClient.transactionsGet({
+      access_token: bankConnection.accessToken,
+      start_date: start_date,
+      end_date: end_date,
+      // Include credentials in request body
+      client_id: process.env.PLAID_CLIENT_ID,
+      secret: process.env.PLAID_SECRET,
+    });
+
+    const transactions = transactionsResponse.data.transactions || [];
+
+    // Process and format the transactions data
+    const formattedTransactions = transactions.map(transaction => ({
+      transaction_id: transaction.transaction_id,
+      account_id: transaction.account_id,
+      amount: transaction.amount,
+      date: transaction.date,
+      name: transaction.name,
+      merchant_name: transaction.merchant_name,
+      category: transaction.category,
+      subcategory: transaction.subcategory,
+      account_owner: transaction.account_owner,
+      iso_currency_code: transaction.iso_currency_code,
+      unofficial_currency_code: transaction.unofficial_currency_code
+    }));
+
+    res.json({
+      institutionId,
+      institutionName: bankConnection.institutionName,
+      dateRange: {
+        startDate: start_date,
+        endDate: end_date
+      },
+      transactions: formattedTransactions,
+      totalTransactionCount: formattedTransactions.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({
+      message: 'Failed to fetch transactions',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createLinkToken: [getCurrentUser, createLinkToken],
   exchangePublicToken: [getCurrentUser, exchangePublicToken],
   getAccounts: [getCurrentUser, getAccounts],
-  getIntegrationStatus: [getCurrentUser, getIntegrationStatus]
+  getIntegrationStatus: [getCurrentUser, getIntegrationStatus],
+  getTransactions: [getCurrentUser, getTransactions]
 };

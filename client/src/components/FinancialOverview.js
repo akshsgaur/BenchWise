@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { plaidAPI } from '../services/api';
+import PlaidIntegration from './PlaidIntegration';
 import './FinancialOverview.css';
 
 function FinancialOverview() {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showAddBank, setShowAddBank] = useState(false);
+  const [bankConnections, setBankConnections] = useState([]);
+  const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
+  const [spendingPeriod, setSpendingPeriod] = useState('last-30-days');
 
   useEffect(() => {
     fetchAccounts();
@@ -16,12 +21,18 @@ function FinancialOverview() {
       setLoading(true);
       const response = await plaidAPI.getAccounts();
       setAccounts(response.data.accounts);
+      setBankConnections(response.data.bankConnections || []);
     } catch (error) {
       console.error('Error fetching accounts:', error);
       setError('Failed to load account information');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBankConnectionComplete = () => {
+    setShowAddBank(false);
+    fetchAccounts(); // Refresh the accounts list
   };
 
   const getTotalBalance = () => {
@@ -75,11 +86,55 @@ function FinancialOverview() {
     );
   }
 
+  if (showAddBank) {
+    return (
+      <div className="financial-overview">
+        <div className="add-bank-header">
+          <h2>Connect Another Bank Account</h2>
+          <button 
+            className="back-btn" 
+            onClick={() => setShowAddBank(false)}
+          >
+            ← Back to Overview
+          </button>
+        </div>
+        <PlaidIntegration onIntegrationComplete={handleBankConnectionComplete} />
+      </div>
+    );
+  }
+
   return (
     <div className="financial-overview">
       <div className="overview-header">
         <h2>Financial Overview</h2>
         <p>Your complete financial picture at a glance</p>
+      </div>
+
+      {/* Connected Banks Section */}
+      <div className="connected-banks-section">
+        <div className="connected-banks-header">
+          <h3>Connected Banks</h3>
+          <button 
+            className="connect-btn"
+            onClick={() => setShowAddBank(true)}
+          >
+            + Connect Another Bank
+          </button>
+        </div>
+        <div className="connected-banks-list">
+          {bankConnections.map((bank, index) => (
+            <div key={index} className="bank-card">
+              <div className="bank-info">
+                <h4>{bank.institutionName}</h4>
+                <p>{bank.accountsCount} account(s)</p>
+              </div>
+              <div className="bank-status">
+                <span className="status-indicator">✅</span>
+                <span>Connected</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="balance-summary">
@@ -132,24 +187,67 @@ function FinancialOverview() {
       </div>
 
       <div className="quick-actions">
-        <h3>Quick Actions</h3>
-        <div className="actions-grid">
-          <button className="action-btn">
-            <span className="action-icon">📊</span>
-            <span>View Transactions</span>
-          </button>
-          <button className="action-btn">
-            <span className="action-icon">📈</span>
-            <span>Analyze Spending</span>
-          </button>
-          <button className="action-btn">
-            <span className="action-icon">🎯</span>
-            <span>Set Goals</span>
-          </button>
-          <button className="action-btn">
-            <span className="action-icon">📋</span>
-            <span>Export Data</span>
-          </button>
+        <h3>Analytics & Insights</h3>
+        <div className="analytics-grid">
+          
+          {/* View Transactions Widget */}
+          <div className="analytics-widget transactions-widget">
+            <div className="widget-header">
+              <div className="widget-info">
+                <span className="widget-icon">📊</span>
+                <div className="widget-title">
+                  <h4>View Transactions</h4>
+                  <p>Review your recent financial activity</p>
+                </div>
+              </div>
+              <div className="period-selector">
+                <select 
+                  value={transactionsPeriod} 
+                  onChange={(e) => setTransactionsPeriod(e.target.value)}
+                  className="period-dropdown"
+                >
+                  <option value="last-7-days">Last 7 days</option>
+                  <option value="last-30-days">Last 30 days</option>
+                  <option value="last-60-days">Last 60 days</option>
+                </select>
+              </div>
+            </div>
+            <div className="widget-content">
+              <div className="no-data-message">
+                No data available
+              </div>
+            </div>
+          </div>
+
+          {/* Analyze Spending Widget */}
+          <div className="analytics-widget spending-widget">
+            <div className="widget-header">
+              <div className="widget-info">
+                <span className="widget-icon">📈</span>
+                <div className="widget-title">
+                  <h4>Analyze Spending</h4>
+                  <p>Track your spending patterns and trends</p>
+                </div>
+              </div>
+              <div className="period-selector">
+                <select 
+                  value={spendingPeriod} 
+                  onChange={(e) => setSpendingPeriod(e.target.value)}
+                  className="period-dropdown"
+                >
+                  <option value="last-7-days">Last 7 days</option>
+                  <option value="last-30-days">Last 30 days</option>
+                  <option value="last-60-days">Last 60 days</option>
+                </select>
+              </div>
+            </div>
+            <div className="widget-content">
+              <div className="no-data-message">
+                No data available
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

@@ -147,40 +147,57 @@ const exchangePublicToken = async (req, res) => {
       secret: process.env.PLAID_SECRET,
     });
 
-    // Delete any existing integration record to avoid schema conflicts
-    await Integration.deleteOne({ userId: user._id });
-
-    // Create integration record using direct MongoDB operations to avoid schema validation issues
-    const integrationData = {
-      userId: user._id,
-      plaid: {
-        isIntegrated: true,
-        accessToken: access_token,
-        itemId: item_id,
-        institutionId: accountsResponse.data.item.institution_id,
-        institutionName: institutionResponse.data.institution.name,
-        lastSync: new Date(),
-        accounts: accounts
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
+    // Create new bank connection data
+    const newBankConnection = {
+      accessToken: access_token,
+      itemId: item_id,
+      institutionId: accountsResponse.data.item.institution_id,
+      institutionName: institutionResponse.data.institution.name,
+      lastSync: new Date(),
+      accounts: accounts
     };
 
-    console.log('Integration data being saved:', JSON.stringify(integrationData, null, 2));
+    // Check if user already has an integration record
+    let integration = await Integration.findOne({ userId: user._id });
 
-    // Use insertOne to bypass Mongoose schema validation
-    const result = await Integration.collection.insertOne(integrationData);
-    console.log('Database insertion result:', result);
-    
-    const integration = await Integration.findById(result.insertedId);
-    console.log('Retrieved integration:', JSON.stringify(integration, null, 2));
+    if (integration) {
+      // Check if this institution is already connected
+      const existingConnection = integration.plaid.bankConnections.find(
+        conn => conn.institutionId === newBankConnection.institutionId
+      );
+      
+      if (existingConnection) {
+        // Update existing connection
+        existingConnection.accessToken = newBankConnection.accessToken;
+        existingConnection.lastSync = new Date();
+        existingConnection.accounts = newBankConnection.accounts;
+      } else {
+        // Add new bank connection
+        integration.plaid.bankConnections.push(newBankConnection);
+      }
+      integration.plaid.isIntegrated = true;
+      await integration.save();
+    } else {
+      // Create new integration record
+      integration = new Integration({
+        userId: user._id,
+        plaid: {
+          isIntegrated: true,
+          bankConnections: [newBankConnection]
+        }
+      });
+      await integration.save();
+    }
+
+    console.log('Integration updated successfully:', JSON.stringify(integration, null, 2));
 
     res.json({
       message: 'Bank account successfully integrated',
       integration: {
         isIntegrated: integration.plaid.isIntegrated,
-        institutionName: integration.plaid.institutionName,
-        accountsCount: integration.plaid.accounts ? integration.plaid.accounts.length : 0
+        institutionName: newBankConnection.institutionName,
+        bankConnectionsCount: integration.plaid.bankConnections.length,
+        accountsCount: accounts.length
       }
     });
   } catch (error) {
@@ -203,10 +220,23 @@ const getAccounts = async (req, res) => {
       return res.status(404).json({ message: 'No bank integration found' });
     }
 
+    // Flatten all accounts from all bank connections
+    const allAccounts = [];
+    const institutions = [];
+    
+    integration.plaid.bankConnections.forEach(connection => {
+      institutions.push({
+        institutionName: connection.institutionName,
+        institutionId: connection.institutionId,
+        lastSync: connection.lastSync
+      });
+      allAccounts.push(...connection.accounts);
+    });
+
     res.json({
-      accounts: integration.plaid.accounts,
-      institutionName: integration.plaid.institutionName,
-      lastSync: integration.plaid.lastSync
+      accounts: allAccounts,
+      bankConnections: institutions,
+      totalConnections: integration.plaid.bankConnections.length
     });
   } catch (error) {
     console.error('Error getting accounts:', error);
@@ -226,7 +256,7 @@ const getIntegrationStatus = async (req, res) => {
     const integration = await Integration.findOne({ userId: user._id });
     console.log('Integration query result:', integration);
     
-    if (!integration) {
+    if (!integration || !integration.plaid.isIntegrated) {
       console.log('No integration found for user:', user._id);
       console.log('User ID type:', typeof user._id);
       console.log('User ID string:', user._id.toString());
@@ -241,18 +271,27 @@ const getIntegrationStatus = async (req, res) => {
       });
     }
 
+    const totalAccounts = integration.plaid.bankConnections.reduce(
+      (total, connection) => total + connection.accounts.length, 0
+    );
+
     console.log('Integration found:', {
       isIntegrated: integration.plaid.isIntegrated,
-      institutionName: integration.plaid.institutionName,
-      accountsCount: integration.plaid.accounts ? integration.plaid.accounts.length : 0
+      bankConnectionsCount: integration.plaid.bankConnections.length,
+      totalAccounts: totalAccounts
     });
 
     res.json({
       isIntegrated: integration.plaid.isIntegrated,
       hasPlaid: integration.plaid.isIntegrated,
-      institutionName: integration.plaid.institutionName,
-      accountsCount: integration.plaid.accounts ? integration.plaid.accounts.length : 0,
-      lastSync: integration.plaid.lastSync
+      bankConnectionsCount: integration.plaid.bankConnections.length,
+      bankConnections: integration.plaid.bankConnections.map(conn => ({
+        institutionName: conn.institutionName,
+        institutionId: conn.institutionId,
+        accountsCount: conn.accounts.length,
+        lastSync: conn.lastSync
+      })),
+      totalAccounts: totalAccounts
     });
   } catch (error) {
     console.error('Error getting integration status:', error);

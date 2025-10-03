@@ -1,5 +1,27 @@
 const mongoose = require('mongoose');
 
+// Define sub-schemas for better structure
+const accountSchema = new mongoose.Schema({
+  accountId: { type: String, required: false },
+  name: { type: String, required: false },
+  type: { type: String, required: false },
+  subtype: { type: String, required: false },
+  balance: {
+    available: { type: Number, required: false },
+    current: { type: Number, required: false }
+  },
+  mask: { type: String, required: false }
+}, { _id: false });
+
+const bankConnectionSchema = new mongoose.Schema({
+  accessToken: { type: String, required: false },
+  itemId: { type: String, required: false },
+  institutionId: { type: String, required: false },
+  institutionName: { type: String, required: false },
+  lastSync: { type: Date, default: Date.now },
+  accounts: [accountSchema]
+}, { _id: false });
+
 const integrationSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -12,37 +34,7 @@ const integrationSchema = new mongoose.Schema({
       type: Boolean,
       default: false
     },
-    accessToken: {
-      type: String,
-      default: null
-    },
-    itemId: {
-      type: String,
-      default: null
-    },
-    institutionId: {
-      type: String,
-      default: null
-    },
-    institutionName: {
-      type: String,
-      default: null
-    },
-    lastSync: {
-      type: Date,
-      default: null
-    },
-    accounts: [{
-      accountId: String,
-      name: String,
-      type: String,
-      subtype: String,
-      balance: {
-        available: Number,
-        current: Number
-      },
-      mask: String
-    }]
+    bankConnections: [bankConnectionSchema]
   },
   createdAt: {
     type: Date,

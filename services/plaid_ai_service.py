@@ -403,7 +403,7 @@ class PlaidAIService:
                     print("accounts_data: ",accounts_data)
                     recent_transactions = self.get_transactions(
                         access_token,
-                        (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
+                        (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d"),
                         datetime.now().strftime("%Y-%m-%d")
                     )
                     print("recent_transactions: ",recent_transactions)

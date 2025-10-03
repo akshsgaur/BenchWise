@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { plaidAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import FinancialOverview from './FinancialOverview';
-import InvestmentTracking from './InvestmentTracking';
 import SubscriptionsOverview from './SubscriptionsOverview';
 
 function Dashboard() {
@@ -80,13 +79,6 @@ function Dashboard() {
           <PlaidIntegration onIntegrationComplete={handleIntegrationComplete} />
         ) : (
           <div className="integrated-dashboard">
-            <div className="integration-status">
-              <div className="status-badge">
-                <span className="status-icon">✅</span>
-                <span>Bank Account Connected</span>
-              </div>
-              <p>Connected to {integrationStatus.institutionName} • {integrationStatus.accountsCount} accounts</p>
-            </div>
 
             <div className="dashboard-tabs">
               <button 
@@ -94,12 +86,6 @@ function Dashboard() {
                 onClick={() => setActiveTab('overview')}
               >
                 Financial Overview
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'investments' ? 'active' : ''}`}
-                onClick={() => setActiveTab('investments')}
-              >
-                Investment Tracking
               </button>
               <button 
                 className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
@@ -111,7 +97,6 @@ function Dashboard() {
 
             <div className="tab-content">
               {activeTab === 'overview' && <FinancialOverview />}
-              {activeTab === 'investments' && <InvestmentTracking />}
               {activeTab === 'subscriptions' && <SubscriptionsOverview />}
             </div>
           </div>

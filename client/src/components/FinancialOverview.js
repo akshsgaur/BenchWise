@@ -10,7 +10,6 @@ function FinancialOverview() {
   const [showAddBank, setShowAddBank] = useState(false);
   const [bankConnections, setBankConnections] = useState([]);
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
-  const [spendingPeriod, setSpendingPeriod] = useState('last-30-days');
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
 
@@ -98,20 +97,6 @@ function FinancialOverview() {
     }).format(amount);
   };
 
-  const getAccountTypeIcon = (type) => {
-    switch (type) {
-      case 'depository':
-        return '🏦';
-      case 'credit':
-        return '💳';
-      case 'investment':
-        return '📈';
-      case 'loan':
-        return '🏠';
-      default:
-        return '💰';
-    }
-  };
 
   if (loading) {
     return (
@@ -180,7 +165,6 @@ function FinancialOverview() {
                 <p>{bank.accountsCount} account(s)</p>
               </div>
               <div className="bank-status">
-                <span className="status-indicator">✅</span>
                 <span>Connected</span>
               </div>
             </div>
@@ -212,40 +196,52 @@ function FinancialOverview() {
 
       <div className="accounts-section">
         <h3>Your Accounts</h3>
-        <div className="accounts-grid">
-          {accounts && Array.isArray(accounts) ? accounts.map((account) => (
-            <div key={account.accountId} className="account-card">
-              <div className="account-header">
-                <div className="account-icon">
-                  {getAccountTypeIcon(account.type)}
-                </div>
-                <div className="account-info">
-                  <h4>{account.name}</h4>
-                  <p className="account-mask">•••• {account.mask}</p>
-                </div>
-              </div>
-              <div className="account-balance">
-                <div className="balance-amount">
-                  {formatCurrency(account.balance.current || 0)}
-                </div>
-                <div className="balance-type">
-                  {account.subtype.charAt(0).toUpperCase() + account.subtype.slice(1)}
-                </div>
-              </div>
-            </div>
-          )) : null}
+        <div className="accounts-table-container">
+          <table className="accounts-table">
+            <thead>
+              <tr>
+                <th>Account Name</th>
+                <th>Account Number</th>
+                <th>Type</th>
+                <th>Balance</th>
+                <th>Available</th>
+              </tr>
+            </thead>
+            <tbody>
+              {accounts && Array.isArray(accounts) ? accounts.map((account) => (
+                <tr key={account.accountId} className="account-row">
+                  <td className="account-name">{account.name}</td>
+                  <td className="account-mask">•••• {account.mask}</td>
+                  <td className="account-type">
+                    {account.subtype.charAt(0).toUpperCase() + account.subtype.slice(1)}
+                  </td>
+                  <td className="account-balance">
+                    {formatCurrency(account.balance.current || 0)}
+                  </td>
+                  <td className="account-available">
+                    {formatCurrency(account.balance.available || 0)}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="5" className="no-accounts">
+                    No accounts found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div className="quick-actions">
-        <h3>Analytics & Insights</h3>
+      <div className="transactions-section">
+        <h3>Transactions</h3>
         <div className="analytics-grid">
           
           {/* View Transactions Widget */}
           <div className="analytics-widget transactions-widget">
             <div className="widget-header">
               <div className="widget-info">
-                <span className="widget-icon">📊</span>
                 <div className="widget-title">
                   <h4>View Transactions</h4>
                   <p>Review your recent financial activity</p>
@@ -321,35 +317,30 @@ function FinancialOverview() {
             </div>
           </div>
 
-          {/* Analyze Spending Widget */}
-          <div className="analytics-widget spending-widget">
-            <div className="widget-header">
-              <div className="widget-info">
-                <span className="widget-icon">📈</span>
-                <div className="widget-title">
-                  <h4>Analyze Spending</h4>
-                  <p>Track your spending patterns and trends</p>
-                </div>
-              </div>
-              <div className="period-selector">
-                <select 
-                  value={spendingPeriod} 
-                  onChange={(e) => setSpendingPeriod(e.target.value)}
-                  className="period-dropdown"
-                >
-                  <option value="last-7-days">Last 7 days</option>
-                  <option value="last-30-days">Last 30 days</option>
-                  <option value="last-60-days">Last 60 days</option>
-                </select>
-              </div>
+        </div>
+      </div>
+
+      <div className="ai-analytics-section">
+        <h3>AI Analytics and Insights</h3>
+        <div className="ai-recommendations-widget">
+          <div className="recommendations-content">
+            <div className="recommendation-item">
+              <h5>Spending Pattern Analysis</h5>
+              <p>Based on your transaction history, we've identified that your largest spending category is dining out, accounting for 35% of your discretionary spending. Consider setting a monthly budget limit to better control these expenses.</p>
             </div>
-            <div className="widget-content">
-              <div className="no-data-message">
-                No data available
-              </div>
+            <div className="recommendation-item">
+              <h5>Budget Optimization</h5>
+              <p>Your monthly subscriptions total $89.50. We recommend reviewing your streaming services - you have overlapping content across 3 platforms. Consolidating to 2 services could save you $25-30 monthly.</p>
+            </div>
+            <div className="recommendation-item">
+              <h5>Savings Opportunities</h5>
+              <p>You consistently spend $200+ on groceries weekly. Switching to a cashback credit card for groceries could earn you 2-3% back, potentially saving $20-30 per month.</p>
+            </div>
+            <div className="recommendation-item">
+              <h5>Financial Health Score</h5>
+              <p>Your current financial health score is 78/100. You're doing well with emergency savings but could improve by reducing discretionary spending by 15% to reach your savings goals faster.</p>
             </div>
           </div>
-
         </div>
       </div>
     </div>

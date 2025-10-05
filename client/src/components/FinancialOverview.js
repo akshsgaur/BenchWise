@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { plaidAPI } from '../services/api';
+import { plaidAPI, transactionAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import './FinancialOverview.css';
 
@@ -10,20 +10,20 @@ function FinancialOverview() {
   const [showAddBank, setShowAddBank] = useState(false);
   const [bankConnections, setBankConnections] = useState([]);
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
-  const [spendingPeriod, setSpendingPeriod] = useState('last-30-days');
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTransactions, setTotalTransactions] = useState(0);
 
   useEffect(() => {
     fetchAccounts();
   }, []);
 
-  // Fetch transactions when bank connections are available
+  // Fetch transactions when component mounts
   useEffect(() => {
-    if (bankConnections.length > 0) {
-      fetchTransactions(transactionsPeriod);
-    }
-  }, [bankConnections]);
+    fetchTransactions(transactionsPeriod);
+  }, []);
 
   const fetchAccounts = async () => {
     try {
@@ -44,9 +44,7 @@ function FinancialOverview() {
     fetchAccounts(); // Refresh the accounts list
   };
 
-  const fetchTransactions = async (period) => {
-    if (!bankConnections.length) return;
-    
+  const fetchTransactions = async (period, page = 1) => {
     try {
       setTransactionsLoading(true);
       
@@ -68,14 +66,37 @@ function FinancialOverview() {
           startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
 
-      // Fetch transactions from the first connected bank (you can modify this logic)
-      const institutionId = bankConnections[0].institutionId;
-      const response = await plaidAPI.getTransactions(institutionId, startDate, endDate);
-      
-      setTransactions(response.data.transactions || []);
+      // Fetch 20 transactions per page
+      const limit = 20;
+      const skip = (page - 1) * limit;
+
+      // Use cached transactions API
+      const response = await transactionAPI.getCachedTransactions({
+        startDate,
+        endDate,
+        limit,
+        skip
+      });
+
+      if (response.data.success) {
+        const data = response.data.data;
+        setTransactions(data.transactions || []);
+        setTotalTransactions(data.totalCount || 0);
+        setTotalPages(data.totalPages || 1);
+        setCurrentPage(page);
+      } else {
+        console.error('Failed to fetch cached transactions:', response.data.message);
+        setTransactions([]);
+        setTotalTransactions(0);
+        setTotalPages(1);
+        setCurrentPage(1);
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
       setTransactions([]);
+      setTotalTransactions(0);
+      setTotalPages(1);
+      setCurrentPage(1);
     } finally {
       setTransactionsLoading(false);
     }
@@ -83,7 +104,12 @@ function FinancialOverview() {
 
   const handleTransactionsPeriodChange = (value) => {
     setTransactionsPeriod(value);
-    fetchTransactions(value);
+    setCurrentPage(1); // Reset to page 1 when changing period
+    fetchTransactions(value, 1);
+  };
+
+  const handlePageChange = (newPage) => {
+    fetchTransactions(transactionsPeriod, newPage);
   };
 
   const getTotalBalance = () => {
@@ -98,20 +124,6 @@ function FinancialOverview() {
     }).format(amount);
   };
 
-  const getAccountTypeIcon = (type) => {
-    switch (type) {
-      case 'depository':
-        return '🏦';
-      case 'credit':
-        return '💳';
-      case 'investment':
-        return '📈';
-      case 'loan':
-        return '🏠';
-      default:
-        return '💰';
-    }
-  };
 
   if (loading) {
     return (
@@ -177,10 +189,8 @@ function FinancialOverview() {
             <div key={index} className="bank-card">
               <div className="bank-info">
                 <h4>{bank.institutionName}</h4>
-                <p>{bank.accountsCount} account(s)</p>
               </div>
               <div className="bank-status">
-                <span className="status-indicator">✅</span>
                 <span>Connected</span>
               </div>
             </div>
@@ -191,8 +201,8 @@ function FinancialOverview() {
       <div className="balance-summary">
         <div className="total-balance">
           <h3>Total Balance</h3>
-          <div className="balance-amount">
-            {formatCurrency(getTotalBalance())}
+          <div className={`balance-amount ${getTotalBalance() > 0 ? 'positive' : getTotalBalance() < 0 ? 'negative' : 'zero'}`}>
+            {getTotalBalance() > 0 ? '+' : getTotalBalance() < 0 ? '' : ''}{formatCurrency(getTotalBalance())}
           </div>
         </div>
         <div className="balance-breakdown">
@@ -211,43 +221,78 @@ function FinancialOverview() {
       </div>
 
       <div className="accounts-section">
-        <h3>Your Accounts</h3>
-        <div className="accounts-grid">
-          {accounts && Array.isArray(accounts) ? accounts.map((account) => (
-            <div key={account.accountId} className="account-card">
-              <div className="account-header">
-                <div className="account-icon">
-                  {getAccountTypeIcon(account.type)}
-                </div>
-                <div className="account-info">
-                  <h4>{account.name}</h4>
-                  <p className="account-mask">•••• {account.mask}</p>
-                </div>
-              </div>
-              <div className="account-balance">
-                <div className="balance-amount">
-                  {formatCurrency(account.balance.current || 0)}
-                </div>
-                <div className="balance-type">
-                  {account.subtype.charAt(0).toUpperCase() + account.subtype.slice(1)}
+        <div className="analytics-grid">
+          {/* View Accounts Widget */}
+          <div className="analytics-widget accounts-widget">
+            <div className="widget-header">
+              <div className="widget-info">
+                <div className="widget-title">
+                  <h4>Accounts</h4>
+                  <p>Review your connected accounts</p>
                 </div>
               </div>
             </div>
-          )) : null}
+            <div className="widget-content">
+              {loading ? (
+                <div className="transactions-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Loading accounts...</span>
+                </div>
+              ) : accounts && accounts.length > 0 ? (
+                <div className="transactions-table-container">
+                  <div className="transactions-info">
+                    <span>Showing {accounts.length} accounts</span>
+                  </div>
+                  <div className="transactions-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Account Name</th>
+                          <th>Account Number</th>
+                          <th>Type</th>
+                          <th>Balance</th>
+                          <th>Available</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {accounts.map((account) => (
+                          <tr key={account.accountId}>
+                            <td className="transaction-date">{account.name}</td>
+                            <td className="transaction-description">•••• {account.mask}</td>
+                            <td className="transaction-category">
+                              {account.subtype.charAt(0).toUpperCase() + account.subtype.slice(1)}
+                            </td>
+                            <td className={`transaction-amount ${account.balance.current >= 0 ? 'income' : 'expense'}`}>
+                              {formatCurrency(account.balance.current || 0)}
+                            </td>
+                            <td className={`transaction-amount ${account.balance.available >= 0 ? 'income' : 'expense'}`}>
+                              {formatCurrency(account.balance.available || 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="no-data-message">
+                  No accounts found
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="quick-actions">
-        <h3>Analytics & Insights</h3>
+      <div className="transactions-section">
         <div className="analytics-grid">
           
           {/* View Transactions Widget */}
           <div className="analytics-widget transactions-widget">
             <div className="widget-header">
               <div className="widget-info">
-                <span className="widget-icon">📊</span>
                 <div className="widget-title">
-                  <h4>View Transactions</h4>
+                  <h4>Transactions</h4>
                   <p>Review your recent financial activity</p>
                 </div>
               </div>
@@ -272,7 +317,7 @@ function FinancialOverview() {
               ) : transactions.length > 0 ? (
                 <div className="transactions-table-container">
                   <div className="transactions-info">
-                    <span>{transactions.length} transactions found</span>
+                    <span>Showing {transactions.length} transactions out of {totalTransactions} transactions</span>
                   </div>
                   <div className="transactions-table">
                     <table>
@@ -285,7 +330,7 @@ function FinancialOverview() {
                         </tr>
                       </thead>
                       <tbody>
-                        {transactions.slice(0, 5).map((transaction) => (
+                        {transactions.map((transaction) => (
                           <tr key={transaction.transaction_id}>
                             <td className="transaction-date">
                               {new Date(transaction.date).toLocaleDateString()}
@@ -299,19 +344,35 @@ function FinancialOverview() {
                             <td className="transaction-category">
                               {transaction.category && transaction.category.join(' > ')}
                             </td>
-                            <td className={`transaction-amount ${transaction.amount < 0 ? 'expense' : 'income'}`}>
-                              {transaction.amount < 0 ? '-' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                            <td className={`transaction-amount ${transaction.amount > 0 ? 'expense' : 'income'}`}>
+                              {transaction.amount > 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    {transactions.length > 5 && (
-                      <div className="transaction-more">
-                        ... and {transactions.length - 5} more transactions
-                      </div>
-                    )}
                   </div>
+                  {totalPages > 1 && (
+                    <div className="transactions-pagination">
+                      <button 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || transactionsLoading}
+                        className="pagination-btn"
+                      >
+                        Previous
+                      </button>
+                      <span className="pagination-info">
+                        {currentPage}/{totalPages}
+                      </span>
+                      <button 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages || transactionsLoading}
+                        className="pagination-btn"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="no-data-message">
@@ -321,35 +382,17 @@ function FinancialOverview() {
             </div>
           </div>
 
-          {/* Analyze Spending Widget */}
-          <div className="analytics-widget spending-widget">
-            <div className="widget-header">
-              <div className="widget-info">
-                <span className="widget-icon">📈</span>
-                <div className="widget-title">
-                  <h4>Analyze Spending</h4>
-                  <p>Track your spending patterns and trends</p>
-                </div>
-              </div>
-              <div className="period-selector">
-                <select 
-                  value={spendingPeriod} 
-                  onChange={(e) => setSpendingPeriod(e.target.value)}
-                  className="period-dropdown"
-                >
-                  <option value="last-7-days">Last 7 days</option>
-                  <option value="last-30-days">Last 30 days</option>
-                  <option value="last-60-days">Last 60 days</option>
-                </select>
-              </div>
-            </div>
-            <div className="widget-content">
-              <div className="no-data-message">
-                No data available
-              </div>
+        </div>
+      </div>
+
+      <div className="ai-analytics-section">
+        <h3>AI Analytics and Insights</h3>
+        <div className="ai-recommendations-widget">
+          <div className="recommendations-content">
+            <div className="no-data-message">
+              <p>No financial data available for analysis. Connect your accounts to get personalized AI insights and recommendations.</p>
             </div>
           </div>
-
         </div>
       </div>
     </div>

@@ -81,27 +81,18 @@ function PlaidIntegration({ onIntegrationComplete }) {
 
           <div className="plaid-benefits">
             <div className="plaid-benefit">
-              <div className="plaid-benefit-icon">
-                <div className="security-icon">🔒</div>
-              </div>
               <div className="plaid-benefit-content">
                 <h3>Bank-Level Security</h3>
                 <p>Your data is encrypted and never stored on our servers. We use industry-standard security protocols to protect your financial information.</p>
               </div>
             </div>
             <div className="plaid-benefit">
-              <div className="plaid-benefit-icon">
-                <div className="data-icon">📊</div>
-              </div>
               <div className="plaid-benefit-content">
                 <h3>Real-Time Data</h3>
                 <p>Get up-to-date account balances, transaction history, and financial data directly from your bank in real-time.</p>
               </div>
             </div>
             <div className="plaid-benefit">
-              <div className="plaid-benefit-icon">
-                <div className="insights-icon">🎯</div>
-              </div>
               <div className="plaid-benefit-content">
                 <h3>Smart Insights</h3>
                 <p>AI-powered analysis of your spending patterns, investment tracking, and personalized financial recommendations.</p>
@@ -113,8 +104,8 @@ function PlaidIntegration({ onIntegrationComplete }) {
         {/* Right Side - Connection Interface */}
         <div className="plaid-right">
           <div className="plaid-connect-card">
-            <h2>Get Started</h2>
-            <p>Connect your bank account to unlock powerful financial insights and tracking capabilities.</p>
+            <h2>Secure Bank Connection</h2>
+            <p>Link your bank account to access comprehensive financial tracking, spending analysis, and personalized insights.</p>
 
             {error && (
               <div className="plaid-error">

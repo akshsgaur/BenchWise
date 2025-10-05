@@ -5,6 +5,7 @@ import Header from './components/Header';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import Profile from './components/Profile';
 import AuthCallback from './components/AuthCallback';
 import Footer from './components/Footer';
 import './App.css';
@@ -42,6 +43,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         } 
       />

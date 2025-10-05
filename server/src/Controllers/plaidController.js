@@ -1,7 +1,4 @@
 const { Configuration, PlaidApi, PlaidEnvironments } = require('plaid');
-const Integration = require('../Models/Integration');
-const User = require('../Models/User');
-const jwt = require('jsonwebtoken');
 
 // Initialize Plaid client with proper configuration
 const configuration = new Configuration({
@@ -30,32 +27,10 @@ if (!process.env.PLAID_CLIENT_ID || !process.env.PLAID_SECRET) {
   console.error('Please check your .env file in the server directory');
 }
 
-// Middleware to get user from token
-const getCurrentUser = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid token' });
-  }
-};
-
 // Create link token for Plaid Link
 const createLinkToken = async (req, res) => {
   try {
-    const { user } = req;
+    const user = req.user;
     
     console.log('Creating link token for user:', user._id);
     console.log('Plaid Client ID:', process.env.PLAID_CLIENT_ID ? 'Set' : 'Not set');
@@ -94,11 +69,11 @@ const createLinkToken = async (req, res) => {
   }
 };
 
-// Exchange public token for access token
+// Exchange public token for access token and get account/institution data
 const exchangePublicToken = async (req, res) => {
   try {
     const { public_token } = req.body;
-    const { user } = req;
+    const user = req.user;
 
     if (!public_token) {
       return res.status(400).json({ message: 'Public token is required' });
@@ -147,8 +122,8 @@ const exchangePublicToken = async (req, res) => {
       secret: process.env.PLAID_SECRET,
     });
 
-    // Create new bank connection data
-    const newBankConnection = {
+    // Create bank connection data structure
+    const bankConnectionData = {
       accessToken: access_token,
       itemId: item_id,
       institutionId: accountsResponse.data.item.institution_id,
@@ -157,146 +132,16 @@ const exchangePublicToken = async (req, res) => {
       accounts: accounts
     };
 
-    // Check if user already has an integration record
-    let integration = await Integration.findOne({ userId: user._id });
-
-    if (integration) {
-      // Check if this institution is already connected
-      const existingConnection = integration.plaid.bankConnections.find(
-        conn => conn.institutionId === newBankConnection.institutionId
-      );
-      
-      if (existingConnection) {
-        // Update existing connection
-        existingConnection.accessToken = newBankConnection.accessToken;
-        existingConnection.lastSync = new Date();
-        existingConnection.accounts = newBankConnection.accounts;
-      } else {
-        // Add new bank connection
-        integration.plaid.bankConnections.push(newBankConnection);
-      }
-      integration.plaid.isIntegrated = true;
-      await integration.save();
-    } else {
-      // Create new integration record
-      integration = new Integration({
-        userId: user._id,
-        plaid: {
-          isIntegrated: true,
-          bankConnections: [newBankConnection]
-        }
-      });
-      await integration.save();
-    }
-
-    console.log('Integration updated successfully:', JSON.stringify(integration, null, 2));
-
+    // Return the data for the integration controller to handle
     res.json({
-      message: 'Bank account successfully integrated',
-      integration: {
-        isIntegrated: integration.plaid.isIntegrated,
-        institutionName: newBankConnection.institutionName,
-        bankConnectionsCount: integration.plaid.bankConnections.length,
-        accountsCount: accounts.length
-      }
+      message: 'Plaid token exchange successful',
+      bankConnectionData: bankConnectionData
     });
+
   } catch (error) {
     console.error('Error exchanging public token:', error);
     res.status(500).json({
-      message: 'Failed to integrate bank account',
-      error: error.message
-    });
-  }
-};
-
-// Get user's accounts
-const getAccounts = async (req, res) => {
-  try {
-    const { user } = req;
-
-    const integration = await Integration.findOne({ userId: user._id });
-    
-    if (!integration || !integration.plaid.isIntegrated) {
-      return res.status(404).json({ message: 'No bank integration found' });
-    }
-
-    // Flatten all accounts from all bank connections
-    const allAccounts = [];
-    const institutions = [];
-    
-    integration.plaid.bankConnections.forEach(connection => {
-      institutions.push({
-        institutionName: connection.institutionName,
-        institutionId: connection.institutionId,
-        lastSync: connection.lastSync
-      });
-      allAccounts.push(...connection.accounts);
-    });
-
-    res.json({
-      accounts: allAccounts,
-      bankConnections: institutions,
-      totalConnections: integration.plaid.bankConnections.length
-    });
-  } catch (error) {
-    console.error('Error getting accounts:', error);
-    res.status(500).json({
-      message: 'Failed to get accounts',
-      error: error.message
-    });
-  }
-};
-
-// Get integration status
-const getIntegrationStatus = async (req, res) => {
-  try {
-    const { user } = req;
-    console.log('Getting integration status for user:', user._id);
-
-    const integration = await Integration.findOne({ userId: user._id });
-    console.log('Integration query result:', integration);
-    
-    if (!integration || !integration.plaid.isIntegrated) {
-      console.log('No integration found for user:', user._id);
-      console.log('User ID type:', typeof user._id);
-      console.log('User ID string:', user._id.toString());
-      
-      // Let's also check if there are any integrations in the database
-      const allIntegrations = await Integration.find({});
-      console.log('All integrations in database:', allIntegrations.map(i => ({ userId: i.userId, isIntegrated: i.plaid?.isIntegrated })));
-      
-      return res.json({
-        isIntegrated: false,
-        hasPlaid: false
-      });
-    }
-
-    const totalAccounts = integration.plaid.bankConnections.reduce(
-      (total, connection) => total + connection.accounts.length, 0
-    );
-
-    console.log('Integration found:', {
-      isIntegrated: integration.plaid.isIntegrated,
-      bankConnectionsCount: integration.plaid.bankConnections.length,
-      totalAccounts: totalAccounts
-    });
-
-    res.json({
-      isIntegrated: integration.plaid.isIntegrated,
-      hasPlaid: integration.plaid.isIntegrated,
-      bankConnectionsCount: integration.plaid.bankConnections.length,
-      bankConnections: integration.plaid.bankConnections.map(conn => ({
-        institutionName: conn.institutionName,
-        institutionId: conn.institutionId,
-        accountsCount: conn.accounts.length,
-        lastSync: conn.lastSync
-      })),
-      totalAccounts: totalAccounts
-    });
-  } catch (error) {
-    console.error('Error getting integration status:', error);
-    res.status(500).json({
-      message: 'Failed to get integration status',
+      message: 'Failed to exchange token with Plaid',
       error: error.message
     });
   }
@@ -305,37 +150,21 @@ const getIntegrationStatus = async (req, res) => {
 // Get transactions data for a bank connection
 const getTransactions = async (req, res) => {
   try {
-    const { user } = req;
-    const { institutionId, startDate, endDate } = req.query;
+    const { accessToken, startDate, endDate } = req.body;
 
-    if (!institutionId) {
-      return res.status(400).json({ message: 'Institution ID is required' });
-    }
-
-    const integration = await Integration.findOne({ userId: user._id });
-    
-    if (!integration || !integration.plaid.isIntegrated) {
-      return res.status(404).json({ message: 'No bank integration found' });
-    }
-
-    // Find the specific bank connection
-    const bankConnection = integration.plaid.bankConnections.find(
-      conn => conn.institutionId === institutionId
-    );
-
-    if (!bankConnection) {
-      return res.status(404).json({ message: 'Bank connection not found' });
+    if (!accessToken) {
+      return res.status(400).json({ message: 'Access token is required' });
     }
 
     // Set default date range if not provided (last 30 days)
     const end_date = endDate || new Date().toISOString().split('T')[0];
     const start_date = startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    console.log(`Fetching transactions for institution ${institutionId} from ${start_date} to ${end_date}`);
+    console.log(`Fetching transactions from ${start_date} to ${end_date}`);
 
     // Get transactions from Plaid
     const transactionsResponse = await plaidClient.transactionsGet({
-      access_token: bankConnection.accessToken,
+      access_token: accessToken,
       start_date: start_date,
       end_date: end_date,
       // Include credentials in request body
@@ -361,8 +190,6 @@ const getTransactions = async (req, res) => {
     }));
 
     res.json({
-      institutionId,
-      institutionName: bankConnection.institutionName,
       dateRange: {
         startDate: start_date,
         endDate: end_date
@@ -374,16 +201,59 @@ const getTransactions = async (req, res) => {
   } catch (error) {
     console.error('Error fetching transactions:', error);
     res.status(500).json({
-      message: 'Failed to fetch transactions',
+      message: 'Failed to fetch transactions from Plaid',
+      error: error.message
+    });
+  }
+};
+
+// Get accounts directly from Plaid (for verification/refresh)
+const getPlaidAccounts = async (req, res) => {
+  try {
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+      return res.status(400).json({ message: 'Access token is required' });
+    }
+
+    // Get account information from Plaid
+    const accountsResponse = await plaidClient.accountsGet({
+      access_token: accessToken,
+      // Include credentials in request body
+      client_id: process.env.PLAID_CLIENT_ID,
+      secret: process.env.PLAID_SECRET,
+    });
+
+    const accounts = accountsResponse.data.accounts ? accountsResponse.data.accounts.map(account => ({
+      accountId: account.account_id,
+      name: account.name,
+      type: account.type,
+      subtype: account.subtype,
+      balance: {
+        available: account.balances.available,
+        current: account.balances.current
+      },
+      mask: account.mask
+    })) : [];
+
+    res.json({
+      accounts: accounts,
+      itemId: accountsResponse.data.item.item_id,
+      institutionId: accountsResponse.data.item.institution_id
+    });
+
+  } catch (error) {
+    console.error('Error fetching accounts from Plaid:', error);
+    res.status(500).json({
+      message: 'Failed to fetch accounts from Plaid',
       error: error.message
     });
   }
 };
 
 module.exports = {
-  createLinkToken: [getCurrentUser, createLinkToken],
-  exchangePublicToken: [getCurrentUser, exchangePublicToken],
-  getAccounts: [getCurrentUser, getAccounts],
-  getIntegrationStatus: [getCurrentUser, getIntegrationStatus],
-  getTransactions: [getCurrentUser, getTransactions]
+  createLinkToken,
+  exchangePublicToken,
+  getTransactions,
+  getPlaidAccounts
 };

@@ -1,13 +1,13 @@
 const express = require('express');
+const { authenticateToken } = require('../middleware/auth');
 const plaidController = require('../Controllers/plaidController');
 
 const router = express.Router();
 
-// Plaid integration routes
-router.post('/link', plaidController.createLinkToken);
-router.post('/exchange', plaidController.exchangePublicToken);
-router.get('/accounts', plaidController.getAccounts);
-router.get('/status', plaidController.getIntegrationStatus);
-router.get('/transactions', plaidController.getTransactions);
+// Pure Plaid API routes
+router.post('/link', authenticateToken, plaidController.createLinkToken);
+router.post('/exchange', authenticateToken, plaidController.exchangePublicToken);
+router.post('/transactions', authenticateToken, plaidController.getTransactions);
+router.post('/accounts', authenticateToken, plaidController.getPlaidAccounts);
 
 module.exports = router;

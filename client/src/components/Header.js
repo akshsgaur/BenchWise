@@ -56,14 +56,24 @@ function Header() {
                 <button 
                   className={`nav-link ${isDashboard ? 'active' : ''}`}
                   onClick={handleDashboardClick}
+                  title="Dashboard"
                 >
-                  Dashboard
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                    <rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                    <rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                    <rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                  </svg>
                 </button>
                 <button 
                   className={`nav-link ${isProfile ? 'active' : ''}`}
                   onClick={handleProfileClick}
+                  title="Profile"
                 >
-                  Profile
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                    <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+                  </svg>
                 </button>
               </nav>
 
@@ -85,10 +95,9 @@ function Header() {
                   onClick={handleLogout}
                   title="Logout"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M6 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V3.33333C2 2.97971 2.14048 2.64057 2.39052 2.39052C2.64057 2.14048 2.97971 2 3.33333 2H6M10.6667 11.3333L14 8M14 8L10.6667 4.66667M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
                   </svg>
-                  <span className="logout-text">Logout</span>
                 </button>
               </div>
             </>

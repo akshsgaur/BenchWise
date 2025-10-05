@@ -104,21 +104,8 @@ function SubscriptionsOverview() {
         <h3>Smart AI Insights</h3>
         <div className="ai-recommendations-widget">
           <div className="recommendations-content">
-            <div className="recommendation-item">
-              <h5>Subscription Audit</h5>
-              <p>Based on your spending patterns, we recommend reviewing your entertainment subscriptions. You currently have multiple streaming services that may have overlapping content. Consider consolidating to 1-2 services to save approximately $15-25 per month.</p>
-            </div>
-            <div className="recommendation-item">
-              <h5>Savings Opportunities</h5>
-              <p>Your productivity software subscriptions show potential for optimization. Several tools offer similar functionality, and switching to annual billing could save you 15-20% on most subscriptions. Estimated monthly savings: $8-12.</p>
-            </div>
-            <div className="recommendation-item">
-              <h5>Usage Analysis</h5>
-              <p>Our AI detected that you have a gym membership but haven't used it in the past 3 months. Consider pausing or canceling this subscription temporarily. You could save $40-60 per month and reactivate when you're ready to use it regularly.</p>
-            </div>
-            <div className="recommendation-item">
-              <h5>Bill Optimization</h5>
-              <p>Set up automatic payments for your essential utilities to avoid late fees. We also recommend reviewing your internet and phone plans - there may be better deals available that could reduce your monthly bills by $10-20.</p>
+            <div className="no-data-message">
+              <p>No subscription data available for analysis. Connect your accounts to get personalized AI insights and recommendations.</p>
             </div>
           </div>
         </div>

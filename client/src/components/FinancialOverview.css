@@ -381,6 +381,17 @@
   gap: 20px;
 }
 
+.recommendations-content .no-data-message {
+  color: #6b7280;
+  font-size: 14px;
+  font-style: italic;
+  padding: 40px 20px;
+  text-align: center;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+}
+
 .recommendation-item {
   padding: 20px;
   background: #f9fafb;
@@ -706,11 +717,6 @@
   }
 
 
-  .connected-banks-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
-  }
 
   .connected-banks-list {
     grid-template-columns: 1fr;

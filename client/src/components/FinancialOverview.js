@@ -162,7 +162,6 @@ function FinancialOverview() {
             <div key={index} className="bank-card">
               <div className="bank-info">
                 <h4>{bank.institutionName}</h4>
-                <p>{bank.accountsCount} account(s)</p>
               </div>
               <div className="bank-status">
                 <span>Connected</span>
@@ -324,21 +323,8 @@ function FinancialOverview() {
         <h3>AI Analytics and Insights</h3>
         <div className="ai-recommendations-widget">
           <div className="recommendations-content">
-            <div className="recommendation-item">
-              <h5>Spending Pattern Analysis</h5>
-              <p>Based on your transaction history, we've identified that your largest spending category is dining out, accounting for 35% of your discretionary spending. Consider setting a monthly budget limit to better control these expenses.</p>
-            </div>
-            <div className="recommendation-item">
-              <h5>Budget Optimization</h5>
-              <p>Your monthly subscriptions total $89.50. We recommend reviewing your streaming services - you have overlapping content across 3 platforms. Consolidating to 2 services could save you $25-30 monthly.</p>
-            </div>
-            <div className="recommendation-item">
-              <h5>Savings Opportunities</h5>
-              <p>You consistently spend $200+ on groceries weekly. Switching to a cashback credit card for groceries could earn you 2-3% back, potentially saving $20-30 per month.</p>
-            </div>
-            <div className="recommendation-item">
-              <h5>Financial Health Score</h5>
-              <p>Your current financial health score is 78/100. You're doing well with emergency savings but could improve by reducing discretionary spending by 15% to reach your savings goals faster.</p>
+            <div className="no-data-message">
+              <p>No financial data available for analysis. Connect your accounts to get personalized AI insights and recommendations.</p>
             </div>
           </div>
         </div>

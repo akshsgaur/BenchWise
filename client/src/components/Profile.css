@@ -155,35 +155,35 @@
   font-weight: 500;
 }
 
-.danger-section h3 {
+.account-deletion-section h3 {
   font-size: 18px;
   font-weight: 600;
   color: #dc2626;
   margin: 0 0 16px 0;
 }
 
-.danger-content {
+.deletion-content {
   border: 1px solid #fecaca;
   border-radius: 8px;
   padding: 24px;
   background: #fef2f2;
 }
 
-.danger-warning h4 {
+.deletion-warning h4 {
   font-size: 16px;
   font-weight: 600;
   color: #dc2626;
   margin: 0 0 8px 0;
 }
 
-.danger-warning p {
+.deletion-warning p {
   font-size: 14px;
   color: #991b1b;
   margin: 0 0 8px 0;
   line-height: 1.5;
 }
 
-.danger-warning p:last-child {
+.deletion-warning p:last-child {
   margin-bottom: 20px;
 }
 
@@ -197,6 +197,7 @@
   font-size: 14px;
   font-weight: 500;
   color: #991b1b;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
 }
 
 .delete-input {
@@ -345,7 +346,7 @@
     padding: 20px;
   }
 
-  .danger-content {
+  .deletion-content {
     padding: 20px;
   }
 }

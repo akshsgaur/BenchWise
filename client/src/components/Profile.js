@@ -204,10 +204,10 @@ function Profile() {
                 </div>
               </div>
 
-              <div className="danger-section">
-                <h3>Danger Zone</h3>
-                <div className="danger-content">
-                  <div className="danger-warning">
+              <div className="account-deletion-section">
+                <h3>Account Management</h3>
+                <div className="deletion-content">
+                  <div className="deletion-warning">
                     <h4>Delete Account</h4>
                     <p>Once you delete your account, there is no going back. This action cannot be undone.</p>
                     <p>All your data, including financial information and settings, will be permanently removed.</p>

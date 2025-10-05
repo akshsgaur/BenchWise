@@ -56,4 +56,13 @@ export const plaidAPI = {
     }),
 };
 
+export const transactionAPI = {
+  getCachedTransactions: (params = {}) => 
+    api.get('/transactions', { params }),
+  getTransactionSummary: (params = {}) => 
+    api.get('/transactions/summary', { params }),
+  triggerManualSync: () => 
+    api.post('/transactions/sync'),
+};
+
 export default api;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { plaidAPI } from '../services/api';
+import { plaidAPI, transactionAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import './FinancialOverview.css';
 
@@ -12,17 +12,17 @@ function FinancialOverview() {
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
+  const [transactionsOffset, setTransactionsOffset] = useState(0);
+  const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
   }, []);
 
-  // Fetch transactions when bank connections are available
+  // Fetch transactions when component mounts
   useEffect(() => {
-    if (bankConnections.length > 0) {
-      fetchTransactions(transactionsPeriod);
-    }
-  }, [bankConnections]);
+    fetchTransactions(transactionsPeriod);
+  }, []);
 
   const fetchAccounts = async () => {
     try {
@@ -43,9 +43,7 @@ function FinancialOverview() {
     fetchAccounts(); // Refresh the accounts list
   };
 
-  const fetchTransactions = async (period) => {
-    if (!bankConnections.length) return;
-    
+  const fetchTransactions = async (period, offset = 0, append = false) => {
     try {
       setTransactionsLoading(true);
       
@@ -67,14 +65,47 @@ function FinancialOverview() {
           startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
 
-      // Fetch transactions from the first connected bank (you can modify this logic)
-      const institutionId = bankConnections[0].institutionId;
-      const response = await plaidAPI.getTransactions(institutionId, startDate, endDate);
-      
-      setTransactions(response.data.transactions || []);
+      // Fetch 20 transactions at a time
+      const limit = 20;
+
+      // Use cached transactions API
+      const response = await transactionAPI.getCachedTransactions({
+        startDate,
+        endDate,
+        limit,
+        skip: offset
+      });
+
+      if (response.data.success) {
+        const data = response.data.data;
+        const newTransactions = data.transactions || [];
+        
+        if (append) {
+          // Append to existing transactions for "Load More"
+          setTransactions(prev => [...prev, ...newTransactions]);
+        } else {
+          // Replace transactions for new period or initial load
+          setTransactions(newTransactions);
+        }
+        
+        // Check if there are more transactions available
+        setHasMoreTransactions(newTransactions.length === limit);
+        setTransactionsOffset(offset + newTransactions.length);
+      } else {
+        console.error('Failed to fetch cached transactions:', response.data.message);
+        if (!append) {
+          setTransactions([]);
+          setHasMoreTransactions(false);
+          setTransactionsOffset(0);
+        }
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      setTransactions([]);
+      if (!append) {
+        setTransactions([]);
+        setHasMoreTransactions(false);
+        setTransactionsOffset(0);
+      }
     } finally {
       setTransactionsLoading(false);
     }
@@ -82,7 +113,12 @@ function FinancialOverview() {
 
   const handleTransactionsPeriodChange = (value) => {
     setTransactionsPeriod(value);
-    fetchTransactions(value);
+    setTransactionsOffset(0); // Reset offset when changing period
+    fetchTransactions(value, 0, false); // Start fresh for new period
+  };
+
+  const handleLoadMore = () => {
+    fetchTransactions(transactionsPeriod, transactionsOffset, true); // Append more transactions
   };
 
   const getTotalBalance = () => {
@@ -196,7 +232,8 @@ function FinancialOverview() {
       <div className="accounts-section">
         <h3>Your Accounts</h3>
         <div className="accounts-table-container">
-          <table className="accounts-table">
+          <div className="accounts-table-scroll">
+            <table className="accounts-table">
             <thead>
               <tr>
                 <th>Account Name</th>
@@ -229,7 +266,8 @@ function FinancialOverview() {
                 </tr>
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -267,7 +305,7 @@ function FinancialOverview() {
               ) : transactions.length > 0 ? (
                 <div className="transactions-table-container">
                   <div className="transactions-info">
-                    <span>{transactions.length} transactions found</span>
+                    <span>Showing {transactions.length} transactions</span>
                   </div>
                   <div className="transactions-table">
                     <table>
@@ -280,7 +318,7 @@ function FinancialOverview() {
                         </tr>
                       </thead>
                       <tbody>
-                        {(transactions.length <= 20 ? transactions : transactions.slice(0, 20)).map((transaction) => (
+                        {transactions.map((transaction) => (
                           <tr key={transaction.transaction_id}>
                             <td className="transaction-date">
                               {new Date(transaction.date).toLocaleDateString()}
@@ -301,12 +339,18 @@ function FinancialOverview() {
                         ))}
                       </tbody>
                     </table>
-                    {transactions.length > 20 && (
-                      <div className="transaction-more">
-                        ... and {transactions.length - 20} more transactions
-                      </div>
-                    )}
                   </div>
+                  {hasMoreTransactions && (
+                    <div className="load-more-container">
+                      <button 
+                        onClick={handleLoadMore}
+                        disabled={transactionsLoading}
+                        className="load-more-btn"
+                      >
+                        {transactionsLoading ? 'Loading...' : 'Load More'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="no-data-message">

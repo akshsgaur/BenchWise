@@ -7,6 +7,7 @@ const passport = require('passport');
 const authRoutes = require('./Routes/authRoutes');
 const plaidRoutes = require('./Routes/plaidRoutes');
 const integrationRoutes = require('./Routes/integrationRoutes');
+const transactionRoutes = require('./Routes/transactionRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -53,13 +54,20 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB connected successfully'))
+.then(() => {
+  console.log('MongoDB connected successfully');
+  
+  // Start transaction sync cron job
+  const transactionSyncService = require('./Services/transactionSyncService');
+  transactionSyncService.startCronJob();
+})
 .catch(err => console.error('MongoDB connection error:', err));
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/plaid', plaidRoutes);
 app.use('/api/integration', integrationRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

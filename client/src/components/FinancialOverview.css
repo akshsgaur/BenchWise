@@ -97,6 +97,18 @@
   letter-spacing: -0.02em;
 }
 
+.balance-amount.positive {
+  color: #059669; /* Green for positive */
+}
+
+.balance-amount.negative {
+  color: #dc2626; /* Red for negative */
+}
+
+.balance-amount.zero {
+  color: #000000; /* Black for zero */
+}
+
 .balance-breakdown {
   display: flex;
   flex-direction: column;
@@ -170,6 +182,36 @@
 
 .accounts-table-scroll::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+.accounts-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 14px;
+  padding: 20px;
+  justify-content: center;
+}
+
+.accounts-loading .loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #000000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0;
+}
+
+.accounts-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .accounts-table {
@@ -620,17 +662,19 @@
   width: 20%;
 }
 
-/* Load More Styles */
-.load-more-container {
+/* Pagination Styles */
+.transactions-pagination {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 16px;
   padding: 16px;
   border-top: 1px solid #e5e7eb;
   background: #f9fafb;
 }
 
-.load-more-btn {
-  padding: 10px 24px;
+.pagination-btn {
+  padding: 8px 16px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background: #ffffff;
@@ -641,14 +685,20 @@
   transition: all 0.2s ease;
 }
 
-.load-more-btn:hover:not(:disabled) {
+.pagination-btn:hover:not(:disabled) {
   background: #f3f4f6;
   border-color: #9ca3af;
 }
 
-.load-more-btn:disabled {
+.pagination-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .transactions-table th {

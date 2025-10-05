@@ -12,8 +12,9 @@ function FinancialOverview() {
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
   const [transactions, setTransactions] = useState([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
-  const [transactionsOffset, setTransactionsOffset] = useState(0);
-  const [hasMoreTransactions, setHasMoreTransactions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTransactions, setTotalTransactions] = useState(0);
 
   useEffect(() => {
     fetchAccounts();
@@ -43,7 +44,7 @@ function FinancialOverview() {
     fetchAccounts(); // Refresh the accounts list
   };
 
-  const fetchTransactions = async (period, offset = 0, append = false) => {
+  const fetchTransactions = async (period, page = 1) => {
     try {
       setTransactionsLoading(true);
       
@@ -65,47 +66,37 @@ function FinancialOverview() {
           startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       }
 
-      // Fetch 20 transactions at a time
+      // Fetch 20 transactions per page
       const limit = 20;
+      const skip = (page - 1) * limit;
 
       // Use cached transactions API
       const response = await transactionAPI.getCachedTransactions({
         startDate,
         endDate,
         limit,
-        skip: offset
+        skip
       });
 
       if (response.data.success) {
         const data = response.data.data;
-        const newTransactions = data.transactions || [];
-        
-        if (append) {
-          // Append to existing transactions for "Load More"
-          setTransactions(prev => [...prev, ...newTransactions]);
-        } else {
-          // Replace transactions for new period or initial load
-          setTransactions(newTransactions);
-        }
-        
-        // Check if there are more transactions available
-        setHasMoreTransactions(newTransactions.length === limit);
-        setTransactionsOffset(offset + newTransactions.length);
+        setTransactions(data.transactions || []);
+        setTotalTransactions(data.totalCount || 0);
+        setTotalPages(data.totalPages || 1);
+        setCurrentPage(page);
       } else {
         console.error('Failed to fetch cached transactions:', response.data.message);
-        if (!append) {
-          setTransactions([]);
-          setHasMoreTransactions(false);
-          setTransactionsOffset(0);
-        }
+        setTransactions([]);
+        setTotalTransactions(0);
+        setTotalPages(1);
+        setCurrentPage(1);
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      if (!append) {
-        setTransactions([]);
-        setHasMoreTransactions(false);
-        setTransactionsOffset(0);
-      }
+      setTransactions([]);
+      setTotalTransactions(0);
+      setTotalPages(1);
+      setCurrentPage(1);
     } finally {
       setTransactionsLoading(false);
     }
@@ -113,12 +104,12 @@ function FinancialOverview() {
 
   const handleTransactionsPeriodChange = (value) => {
     setTransactionsPeriod(value);
-    setTransactionsOffset(0); // Reset offset when changing period
-    fetchTransactions(value, 0, false); // Start fresh for new period
+    setCurrentPage(1); // Reset to page 1 when changing period
+    fetchTransactions(value, 1);
   };
 
-  const handleLoadMore = () => {
-    fetchTransactions(transactionsPeriod, transactionsOffset, true); // Append more transactions
+  const handlePageChange = (newPage) => {
+    fetchTransactions(transactionsPeriod, newPage);
   };
 
   const getTotalBalance = () => {
@@ -210,8 +201,8 @@ function FinancialOverview() {
       <div className="balance-summary">
         <div className="total-balance">
           <h3>Total Balance</h3>
-          <div className="balance-amount">
-            {formatCurrency(getTotalBalance())}
+          <div className={`balance-amount ${getTotalBalance() > 0 ? 'positive' : getTotalBalance() < 0 ? 'negative' : 'zero'}`}>
+            {getTotalBalance() > 0 ? '+' : getTotalBalance() < 0 ? '' : ''}{formatCurrency(getTotalBalance())}
           </div>
         </div>
         <div className="balance-breakdown">
@@ -230,49 +221,70 @@ function FinancialOverview() {
       </div>
 
       <div className="accounts-section">
-        <h3>Your Accounts</h3>
-        <div className="accounts-table-container">
-          <div className="accounts-table-scroll">
-            <table className="accounts-table">
-            <thead>
-              <tr>
-                <th>Account Name</th>
-                <th>Account Number</th>
-                <th>Type</th>
-                <th>Balance</th>
-                <th>Available</th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts && Array.isArray(accounts) ? accounts.map((account) => (
-                <tr key={account.accountId} className="account-row">
-                  <td className="account-name">{account.name}</td>
-                  <td className="account-mask">•••• {account.mask}</td>
-                  <td className="account-type">
-                    {account.subtype.charAt(0).toUpperCase() + account.subtype.slice(1)}
-                  </td>
-                  <td className="account-balance">
-                    {formatCurrency(account.balance.current || 0)}
-                  </td>
-                  <td className="account-available">
-                    {formatCurrency(account.balance.available || 0)}
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" className="no-accounts">
-                    No accounts found
-                  </td>
-                </tr>
+        <div className="analytics-grid">
+          {/* View Accounts Widget */}
+          <div className="analytics-widget accounts-widget">
+            <div className="widget-header">
+              <div className="widget-info">
+                <div className="widget-title">
+                  <h4>Accounts</h4>
+                  <p>Review your connected accounts</p>
+                </div>
+              </div>
+            </div>
+            <div className="widget-content">
+              {loading ? (
+                <div className="transactions-loading">
+                  <div className="loading-spinner"></div>
+                  <span>Loading accounts...</span>
+                </div>
+              ) : accounts && accounts.length > 0 ? (
+                <div className="transactions-table-container">
+                  <div className="transactions-info">
+                    <span>Showing {accounts.length} accounts</span>
+                  </div>
+                  <div className="transactions-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Account Name</th>
+                          <th>Account Number</th>
+                          <th>Type</th>
+                          <th>Balance</th>
+                          <th>Available</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {accounts.map((account) => (
+                          <tr key={account.accountId}>
+                            <td className="transaction-date">{account.name}</td>
+                            <td className="transaction-description">•••• {account.mask}</td>
+                            <td className="transaction-category">
+                              {account.subtype.charAt(0).toUpperCase() + account.subtype.slice(1)}
+                            </td>
+                            <td className={`transaction-amount ${account.balance.current >= 0 ? 'income' : 'expense'}`}>
+                              {formatCurrency(account.balance.current || 0)}
+                            </td>
+                            <td className={`transaction-amount ${account.balance.available >= 0 ? 'income' : 'expense'}`}>
+                              {formatCurrency(account.balance.available || 0)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="no-data-message">
+                  No accounts found
+                </div>
               )}
-            </tbody>
-            </table>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="transactions-section">
-        <h3>Transactions</h3>
         <div className="analytics-grid">
           
           {/* View Transactions Widget */}
@@ -280,7 +292,7 @@ function FinancialOverview() {
             <div className="widget-header">
               <div className="widget-info">
                 <div className="widget-title">
-                  <h4>View Transactions</h4>
+                  <h4>Transactions</h4>
                   <p>Review your recent financial activity</p>
                 </div>
               </div>
@@ -305,7 +317,7 @@ function FinancialOverview() {
               ) : transactions.length > 0 ? (
                 <div className="transactions-table-container">
                   <div className="transactions-info">
-                    <span>Showing {transactions.length} transactions</span>
+                    <span>Showing {transactions.length} transactions out of {totalTransactions} transactions</span>
                   </div>
                   <div className="transactions-table">
                     <table>
@@ -332,22 +344,32 @@ function FinancialOverview() {
                             <td className="transaction-category">
                               {transaction.category && transaction.category.join(' > ')}
                             </td>
-                            <td className={`transaction-amount ${transaction.amount < 0 ? 'expense' : 'income'}`}>
-                              {transaction.amount < 0 ? '-' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                            <td className={`transaction-amount ${transaction.amount > 0 ? 'expense' : 'income'}`}>
+                              {transaction.amount > 0 ? '-' : '+'}${Math.abs(transaction.amount).toFixed(2)}
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                  {hasMoreTransactions && (
-                    <div className="load-more-container">
+                  {totalPages > 1 && (
+                    <div className="transactions-pagination">
                       <button 
-                        onClick={handleLoadMore}
-                        disabled={transactionsLoading}
-                        className="load-more-btn"
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1 || transactionsLoading}
+                        className="pagination-btn"
                       >
-                        {transactionsLoading ? 'Loading...' : 'Load More'}
+                        Previous
+                      </button>
+                      <span className="pagination-info">
+                        {currentPage}/{totalPages}
+                      </span>
+                      <button 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages || transactionsLoading}
+                        className="pagination-btn"
+                      >
+                        Next
                       </button>
                     </div>
                   )}

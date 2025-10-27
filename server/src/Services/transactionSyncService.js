@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const Integration = require('../Models/Integration');
 const Transaction = require('../Models/Transaction');
 const { PlaidApi, Configuration, PlaidEnvironments } = require('plaid');
+const insightGenerationService = require('./insightGenerationService');
 
 // Initialize Plaid client
 const configuration = new Configuration({
@@ -50,6 +51,12 @@ class TransactionSyncService {
       }
 
       console.log('Transaction sync completed successfully');
+
+      try {
+        await insightGenerationService.runForAllUsers();
+      } catch (insightError) {
+        console.error('Failed to generate AI insights after transaction sync:', insightError.message);
+      }
     } catch (error) {
       console.error('Error in transaction sync:', error);
     } finally {

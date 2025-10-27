@@ -5,6 +5,7 @@ import { plaidAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import FinancialOverview from './FinancialOverview';
 import SubscriptionsOverview from './SubscriptionsOverview';
+import AIAdvisor from './AIAdvisor';
 
 function Dashboard() {
   const { user, logout } = useAuth();
@@ -81,23 +82,30 @@ function Dashboard() {
           <div className="integrated-dashboard">
 
             <div className="dashboard-tabs">
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => setActiveTab('overview')}
               >
                 Financial Overview
               </button>
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
                 onClick={() => setActiveTab('subscriptions')}
               >
                 Subscriptions Overview
+              </button>
+              <button
+                className={`tab-btn ${activeTab === 'ai-advisor' ? 'active' : ''}`}
+                onClick={() => setActiveTab('ai-advisor')}
+              >
+                AI Advisor
               </button>
             </div>
 
             <div className="tab-content">
               {activeTab === 'overview' && <FinancialOverview />}
               {activeTab === 'subscriptions' && <SubscriptionsOverview />}
+              {activeTab === 'ai-advisor' && <AIAdvisor />}
             </div>
           </div>
         )}

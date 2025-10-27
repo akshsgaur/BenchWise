@@ -65,4 +65,14 @@ export const transactionAPI = {
     api.post('/transactions/sync'),
 };
 
+export const insightsAPI = {
+  getLatestInsight: () => api.get('/insights/latest'),
+  getDashboardOverview: () => api.get('/insights/dashboard'),
+};
+
+export const aiAdvisorAPI = {
+  askQuestion: (question) => api.post('/v1/ai-advisor/query', { question }),
+  getChatHistory: () => api.get('/v1/ai-advisor/history'),
+};
+
 export default api;

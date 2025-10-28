@@ -2,9 +2,14 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
-from plaid_ai_service import PlaidAIService
-from openai import OpenAI
+
+from bson import ObjectId
 from dotenv import load_dotenv
+from openai import OpenAI
+from pymongo import MongoClient
+from urllib.parse import urlparse
+
+from plaid_ai_service import PlaidAIService
 
 
 load_dotenv()
@@ -18,6 +23,13 @@ class PlaidAgentService:
         # Initialize base plaid service
         self.plaid_service = PlaidAIService()
 
+        mongo_uri = os.getenv('MONGODB_URI')
+        if not mongo_uri:
+            raise ValueError('MONGODB_URI environment variable is required for PlaidAgentService')
+
+        self.mongo_client = MongoClient(mongo_uri)
+        self.db = self._resolve_database(self.mongo_client, os.getenv('MONGODB_DB_NAME'))
+
         self.openai_client = OpenAI(
             base_url = f"{os.getenv('ENDPOINT_URL')}openai/v1/",
             api_key = os.getenv('AZURE_OPENAI_API_KEY')
@@ -27,9 +39,65 @@ class PlaidAgentService:
         # Initialize tools
         self.tools = self._define_tools()
 
+    @staticmethod
+    def _resolve_database(client: MongoClient, explicit_db: Optional[str]):
+        if explicit_db:
+            return client[explicit_db]
+
+        try:
+            default_db = client.get_default_database()
+            if default_db is not None:
+                return default_db
+        except Exception:
+            pass
+
+        env_db = os.getenv('MONGODB_DB_NAME')
+        if env_db:
+            return client[env_db]
+
+        uri = os.getenv('MONGODB_URI', '')
+        parsed = urlparse(uri)
+        db_from_uri = parsed.path.lstrip('/') if parsed.path else ''
+        if db_from_uri:
+            return client[db_from_uri]
+
+        raise ValueError('Unable to determine MongoDB database name for PlaidAgentService')
+
+    def _get_user_access_tokens(self, user_id: str) -> List[str]:
+        try:
+            object_id = ObjectId(user_id)
+        except Exception as exc:  # pylint: disable=broad-except
+            raise ValueError(f'Invalid user_id supplied to PlaidAgentService: {user_id}') from exc
+
+        integration = self.db['integrations'].find_one({'userId': object_id})
+        if not integration:
+            return []
+
+        connections = integration.get('plaid', {}).get('bankConnections', [])
+        tokens = [conn.get('accessToken') for conn in connections if conn.get('accessToken')]
+        return tokens
+
     def _define_tools(self) -> List[Dict]:
             """ Define all the tools the agent requires"""
             return [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "get_recent_transactions",
+                        "description": "Retrieve user transactions for a specified period",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "period": {
+                                    "type": "string",
+                                    "enum": ["7", "30", "60"],
+                                    "description": "Number of days of transactions to retrieve (7, 30, or 60)"
+                                }
+                            },
+                            "required": ["period"]
+                        }
+                    }
+                },
                 {
                     "type": "function", 
                     "function": {
@@ -48,29 +116,6 @@ class PlaidAgentService:
                         "required": ["access_token"]
                         } 
                     }
-                },
-                {
-                "type": "function",
-                "function": {
-                    "name": "get_recent_transactions",
-                    "description": "Retrieve transactions from the past N days",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "access_token": {
-                                "type": "string",
-                                "description": "Plaid access token"
-                            },
-                            "days": {
-                                "type": "integer",
-                                "description": "Number of days back to retrieve (7, 30, 60, or 90)",
-                                "enum": [7, 30, 60, 90]
-                            }
-                        },
-                        "required": ["access_token", "days"]
-                    }
-                }
-
                 },
 
                 {
@@ -477,13 +522,24 @@ class PlaidAgentService:
             return {"error": str(e)}    
 
     
-    def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str: 
+    def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> str:
         """ Execute a tool and return the result as JSON string"""
 
         try: 
             if tool_name == "get_account_balances":
                 result = self.get_account_balances(**arguments)
             elif tool_name == "get_recent_transactions":
+                period = arguments.pop('period', None)
+                if period is not None:
+                    period_str = str(period)
+                    period_map = {
+                        '7': 7,
+                        '30': 30,
+                        '60': 60
+                    }
+                    if period_str not in period_map:
+                        return json.dumps({"error": f"Unsupported period value: {period}"})
+                    arguments['days'] = period_map[period_str]
                 result = self.get_recent_transactions(**arguments)
             elif tool_name == "analyze_spending_by_category":
                 result = self.analyze_spending_by_category(**arguments)
@@ -568,7 +624,7 @@ class PlaidAgentService:
             }
         }
 
-    def run_agent(self, user_query: str, access_token: str, max_iterations: int = 10) -> Dict[str, Any]:
+    def run_agent(self, user_query: str, user_id: str, max_iterations: int = 10) -> Dict[str, Any]:
         """
         Run the agentic workflow.
 
@@ -578,6 +634,12 @@ class PlaidAgentService:
         3. Execute tools in sequence
         4. Synthesize results into a structured response
         """
+
+        access_tokens = self._get_user_access_tokens(user_id)
+        if not access_tokens:
+            raise ValueError(f'No Plaid access tokens found for user {user_id}')
+
+        primary_token = access_tokens[0]
 
         messages =  [
             {
@@ -603,7 +665,7 @@ Guidelines:
 - Base all advice on actual data, not assumptions
 - If data is missing or a tool fails, acknowledge it clearly
 
-Use the access_token: {access_token}
+Use the access_token: {primary_token}
 
 """
             },
@@ -658,7 +720,7 @@ Use the access_token: {access_token}
 
                 # Inject access_token if not present
                 if 'access_token' not in function_args:
-                    function_args['access_token'] = access_token
+                    function_args['access_token'] = primary_token
 
                 print(f"🔧 Calling tool: {function_name}")
                 print(f"   Arguments: {json.dumps(function_args, indent=2)}")
@@ -670,7 +732,7 @@ Use the access_token: {access_token}
                 # Execute the tool
                 function_response = self._execute_tool(function_name, function_args)
 
-                print(f"   Result: {function_response[:200]}...")
+                print(f"   Result: {function_response}")
 
                 # Add the tool response to messages
                 messages.append({
@@ -697,6 +759,3 @@ Use the access_token: {access_token}
         
 
         
-
-
-

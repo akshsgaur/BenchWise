@@ -340,12 +340,36 @@ class PlaidChatbotAgent:
                     },
                 },
             },
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_recent_transactions",
+                    "description": "Retrieve recent transactions for the last 7, 30, or 60 days.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "user_id": {"type": "string"},
+                            "period": {
+                                "type": "string",
+                                "enum": ["7", "30", "60"],
+                                "description": "Number of days of transactions to retrieve"
+                            }
+                        },
+                        "required": ["user_id", "period"],
+                    },
+                },
+            },
         ]
 
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool by fetching from Plaid."""
         user_id = arguments.get("user_id")
         period_days = arguments.get("period_days", 60)
+
+        if tool_name == "get_recent_transactions":
+            period = arguments.get("period", "7")
+            period_map = {"7": 7, "30": 30, "60": 60}
+            period_days = period_map.get(str(period), 7)
 
         # Get Plaid access token
         access_token = self._get_plaid_access_token(user_id)
@@ -356,7 +380,7 @@ class PlaidChatbotAgent:
             if tool_name == "get_account_balances":
                 return self._fetch_accounts_from_plaid(access_token)
 
-            elif tool_name in ["get_income_and_spending", "get_spending_by_category"]:
+            elif tool_name in ["get_income_and_spending", "get_spending_by_category", "get_recent_transactions"]:
                 return self._fetch_transactions_from_plaid(access_token, period_days)
 
             else:

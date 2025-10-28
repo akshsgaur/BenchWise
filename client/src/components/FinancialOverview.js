@@ -469,7 +469,7 @@ function FinancialOverview({ refreshKey = 0 }) {
               <p>No financial data available for analysis. Connect your accounts to get personalized AI insights and recommendations.</p>
             </div>
           ) : (
-            <>
+            <div className="insight-content">
               <div className="insight-summary">
                 <h4>{insight.summary?.headline}</h4>
                 <p>{insight.summary?.narrative}</p>
@@ -539,7 +539,7 @@ function FinancialOverview({ refreshKey = 0 }) {
                   )}
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

@@ -25,7 +25,26 @@ import plaid
 from bson import ObjectId
 from pymongo import MongoClient
 
-load_dotenv()
+# Load environment variables from parent directory or current directory
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+
+# Try loading from multiple locations
+env_paths = [
+    os.path.join(CURRENT_DIR, '.env'),
+    os.path.join(PARENT_DIR, '.env'),
+    os.path.join(PARENT_DIR, 'server', '.env'),
+]
+
+env_loaded = False
+for env_path in env_paths:
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=False)
+        env_loaded = True
+        break
+
+if not env_loaded:
+    load_dotenv()
 
 app = FastAPI(title="BenchWise AI Chatbot", version="1.0.0")
 
@@ -43,6 +62,7 @@ PLAID_CLIENT_ID = os.getenv('PLAID_CLIENT_ID')
 PLAID_SECRET = os.getenv('PLAID_SECRET')
 PLAID_ENV = os.getenv('PLAID_ENV', 'sandbox')
 
+
 configuration = Configuration(
     host=plaid.Environment.Sandbox if PLAID_ENV == 'sandbox' else plaid.Environment.Production,
     api_key={
@@ -55,8 +75,18 @@ plaid_client = plaid_api.PlaidApi(api_client)
 
 # MongoDB connection
 MONGODB_URI = os.getenv('MONGODB_URI')
-mongo_client = MongoClient(MONGODB_URI)
-db = mongo_client.get_database(os.getenv('MONGODB_DB_NAME', 'benchwise'))
+MONGODB_DB_NAME = os.getenv('MONGODB_DB_NAME', 'benchwise')
+
+if not MONGODB_URI:
+    print("WARNING: MONGODB_URI is not set - MongoDB connection will fail!")
+
+try:
+    mongo_client = MongoClient(MONGODB_URI)
+    db = mongo_client.get_database(MONGODB_DB_NAME)
+except Exception as e:
+    print(f"ERROR: MongoDB connection failed: {e}")
+    mongo_client = None
+    db = None
 
 
 class ChatRequest(BaseModel):
@@ -69,9 +99,9 @@ class PlaidChatbotAgent:
     """Chatbot that fetches directly from Plaid when needed."""
 
     def __init__(self):
-        api_key = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
-        base_url = os.getenv("ENDPOINT_URL")
-        deployment = os.getenv("DEPLOYMENT_NAME") or os.getenv("OPENAI_MODEL")
+        api_key = (os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
+        base_url = (os.getenv("ENDPOINT_URL") or "").strip()
+        deployment = (os.getenv("DEPLOYMENT_NAME") or os.getenv("OPENAI_MODEL") or "").strip()
 
         self.openai_client: Optional[OpenAI] = None
         self.model_name: Optional[str] = None
@@ -81,7 +111,7 @@ class PlaidChatbotAgent:
             self.openai_client = OpenAI(api_key=api_key, base_url=base)
             self.model_name = deployment
         else:
-            print("⚠️ ChatbotAgent initialized without OpenAI credentials")
+            print("WARNING: ChatbotAgent initialized without OpenAI credentials")
 
         self.tools = self._define_tools()
 
@@ -110,12 +140,8 @@ class PlaidChatbotAgent:
             access_token = exchange_response['access_token']
             item_id = exchange_response['item_id']
 
-            print(f"✅ Created sandbox access token: {access_token[:20]}...")
-            print(f"✅ Item ID: {item_id}")
-
             # For sandbox, transactions need to be initialized
             # The first call to get transactions triggers the initialization
-            print("⏳ Waiting for sandbox transactions to initialize...")
             import time
             time.sleep(3)  # Wait for transactions to be ready
 
@@ -133,12 +159,16 @@ class PlaidChatbotAgent:
 
         # For Plaid Sandbox, always create a fresh token to avoid expiration issues
         if PLAID_ENV == 'sandbox':
-            print("🔄 Running in sandbox mode - creating fresh access token...")
             return self._create_sandbox_access_token()
 
         # For production, try MongoDB first
         try:
             print(f"Looking up access token for user_id: {user_id}")
+
+            # Check if db is available
+            if db is None:
+                print("WARNING: MongoDB is not available - cannot fetch access token")
+                return None
 
             # Try to convert to ObjectId
             try:
@@ -166,7 +196,7 @@ class PlaidChatbotAgent:
                 if token:
                     return token
 
-            print("⚠️ No valid token in MongoDB")
+            print("WARNING: No valid token in MongoDB")
             return None
 
         except Exception as e:
@@ -398,15 +428,9 @@ class PlaidChatbotAgent:
     ) -> Dict[str, Any]:
         """Answer a user's financial question using agentic workflow with Plaid data."""
 
-        print("\n" + "="*80)
-        print(f"🤖 AGENT STARTED")
-        print(f"📝 User Question: {question}")
-        print(f"👤 User ID: {user_id}")
-        print(f"🔄 Max Iterations: {max_iterations}")
-        print("="*80 + "\n")
 
         if not self.openai_client or not self.model_name:
-            print("❌ OpenAI client not configured!")
+            print("ERROR: OpenAI client not configured!")
             return {
                 "answer": {
                     "summary": "AI service unavailable",
@@ -463,10 +487,6 @@ Guidelines:
             )
 
             response_message = response.choices[0].message
-            print(f"✅ OpenAI Response received")
-
-            if response_message.content:
-                print(f"💬 Assistant thinking: {response_message.content[:100]}...")
 
             messages.append(
                 {
@@ -477,9 +497,6 @@ Guidelines:
             )
 
             if not response_message.tool_calls:
-                print(f"\n🛑 No more tool calls - Agent is ready to respond")
-                print(f"📊 Total tools used in this conversation: {len(tools_used)}")
-                print(f"📝 Generating final structured response...")
                 final_response = self.openai_client.chat.completions.create(
                     model=self.model_name,
                     messages=messages
@@ -496,20 +513,9 @@ Guidelines:
                 try:
                     structured_answer = json.loads(final_response.choices[0].message.content)
                     structured_answer["tools_used"] = tools_used
-
-                    print(f"\n✨ FINAL RESPONSE GENERATED")
-                    print(f"   Summary: {structured_answer.get('summary', '')[:100]}...")
-                    print(f"   Metrics: {len(structured_answer.get('analysis', {}).get('key_metrics', []))} key metrics")
-                    print(f"   Insights: {len(structured_answer.get('analysis', {}).get('insights', []))} insights")
-                    print(f"   Recommendations: {len(structured_answer.get('recommendations', []))} recommendations")
-                    print(f"   Tools Used: {tools_used}")
-                    print(f"\n{'='*80}")
-                    print(f"✅ AGENT COMPLETED SUCCESSFULLY")
-                    print(f"{'='*80}\n")
-
                     return {"answer": structured_answer, "query": question, "tools_used": len(tools_used)}
                 except json.JSONDecodeError as e:
-                    print(f"⚠️ Failed to parse structured response: {e}")
+                    print(f"ERROR: Failed to parse structured response: {e}")
                     return {
                         "answer": {
                             "summary": response_message.content or "Analysis complete",
@@ -521,39 +527,20 @@ Guidelines:
                         "iterations": iteration + 1,
                     }
 
-            print(f"\n🔧 Agent wants to call {len(response_message.tool_calls)} tool(s)")
             for idx, tool_call in enumerate(response_message.tool_calls, 1):
                 function_name = tool_call.function.name
-
-                print(f"\n   🔧 Tool Call #{idx}: {function_name}")
-
+                
                 try:
                     function_args = json.loads(tool_call.function.arguments or "{}")
-                    print(f"      Arguments: {json.dumps(function_args, indent=2)}")
                 except json.JSONDecodeError:
                     function_args = {}
-                    print(f"      ⚠️ Failed to parse arguments, using empty dict")
+                    print(f"WARNING: Failed to parse arguments for {function_name}")
 
                 function_args.setdefault("user_id", user_id)
-
-                print(f"      ⏳ Executing {function_name}...")
                 tool_result = self._execute_tool(function_name, function_args)
 
-                # Show result summary
-                if isinstance(tool_result, dict):
-                    if 'error' in tool_result:
-                        print(f"      ❌ Error: {tool_result['error']}")
-                    else:
-                        result_keys = list(tool_result.keys())[:5]
-                        print(f"      ✅ Success! Returned keys: {result_keys}")
-                        if 'totalIncome' in tool_result:
-                            print(f"         - Income: ${tool_result['totalIncome']:.2f}")
-                        if 'totalSpend' in tool_result:
-                            print(f"         - Spending: ${tool_result['totalSpend']:.2f}")
-                        if 'netWorth' in tool_result:
-                            print(f"         - Net Worth: ${tool_result['netWorth']:.2f}")
-                        if 'categoryBreakdown' in tool_result:
-                            print(f"         - Categories: {len(tool_result['categoryBreakdown'])}")
+                if isinstance(tool_result, dict) and 'error' in tool_result:
+                    print(f"ERROR in {function_name}: {tool_result['error']}")
 
                 tools_used.append(function_name)
 
@@ -566,10 +553,7 @@ Guidelines:
                     }
                 )
 
-        print(f"\n{'='*80}")
-        print(f"⚠️ AGENT REACHED MAX ITERATIONS ({max_iterations})")
-        print(f"   Tools used: {tools_used}")
-        print(f"{'='*80}\n")
+        print(f"WARNING: AGENT REACHED MAX ITERATIONS ({max_iterations})")
 
         return {
             "answer": {

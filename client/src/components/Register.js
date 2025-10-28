@@ -68,15 +68,15 @@ function Register() {
           </p>
           <div className="auth-left-features">
             <div className="auth-left-feature">
-              <div className="auth-left-feature-icon">📈</div>
+              <span className="auth-feature-bullet">•</span>
               <span>Real-time market data and portfolio analytics</span>
             </div>
             <div className="auth-left-feature">
-              <div className="auth-left-feature-icon">🎯</div>
+              <span className="auth-feature-bullet">•</span>
               <span>Personalized investment strategies and recommendations</span>
             </div>
             <div className="auth-left-feature">
-              <div className="auth-left-feature-icon">💼</div>
+              <span className="auth-feature-bullet">•</span>
               <span>Professional-grade tools for serious investors</span>
             </div>
           </div>

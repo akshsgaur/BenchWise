@@ -3,9 +3,31 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
 from openai import OpenAI
 
 from insight_data_repository import InsightDataRepository
+
+# Load environment variables from parent directory or current directory
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PARENT_DIR = os.path.dirname(CURRENT_DIR)
+
+# Try loading from multiple locations
+env_paths = [
+    os.path.join(CURRENT_DIR, '.env'),
+    os.path.join(PARENT_DIR, '.env'),
+    os.path.join(PARENT_DIR, 'server', '.env'),
+]
+
+env_loaded = False
+for env_path in env_paths:
+    if os.path.exists(env_path):
+        load_dotenv(env_path, override=False)
+        env_loaded = True
+        break
+
+if not env_loaded:
+    load_dotenv()
 
 
 class InsightAgentService:
@@ -14,9 +36,9 @@ class InsightAgentService:
     def __init__(self, mongo_uri: Optional[str] = None, db_name: Optional[str] = None):
         self.repository = InsightDataRepository(mongo_uri=mongo_uri, db_name=db_name)
 
-        api_key = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
-        base_url = os.getenv("ENDPOINT_URL")
-        deployment = os.getenv("DEPLOYMENT_NAME") or os.getenv("OPENAI_MODEL")
+        api_key = (os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") or "").strip()
+        base_url = (os.getenv("ENDPOINT_URL") or "").strip()
+        deployment = (os.getenv("DEPLOYMENT_NAME") or os.getenv("OPENAI_MODEL") or "").strip()
 
         self.openai_client: Optional[OpenAI] = None
         self.model_name: Optional[str] = None
@@ -35,13 +57,13 @@ class InsightAgentService:
     # ------------------------------------------------------------------
     def generate_for_all_users(self, period_days: int = 60) -> None:
         integrations = self.repository.find_integrations_with_plaid()
-        print(f"🧠 Generating insights for {len(integrations)} users (window={period_days}d)")
+        print(f"[INFO] Generating insights for {len(integrations)} users (window={period_days}d)")
         for integration in integrations:
             user_id = str(integration["userId"])
             try:
                 self.generate_for_user(user_id=user_id, period_days=period_days)
             except Exception as exc:  # pylint: disable=broad-except
-                print(f"❌ Insight generation failed for user {user_id}: {exc}")
+                print(f"[ERROR] Insight generation failed for user {user_id}: {exc}")
 
     def generate_for_user(self, user_id: str, period_days: int = 60) -> Dict[str, Any]:
         snapshot = self.repository.get_snapshot(user_id, period_days)
@@ -49,13 +71,13 @@ class InsightAgentService:
         if snapshot["transactionCount"] == 0:
             placeholder = self._build_placeholder_document(snapshot)
             self.repository.save_insight_document(user_id, placeholder)
-            print(f"ℹ️ No transactions for user {user_id}. Stored placeholder insight.")
+            print(f"[INFO] No transactions for user {user_id}. Stored placeholder insight.")
             return {"status": "placeholder", "userId": user_id}
 
         if not self.openai_client or not self.model_name:
             fallback = self._build_fallback_document(snapshot)
             self.repository.save_insight_document(user_id, fallback)
-            print(f"⚠️ Stored heuristic insight for user {user_id} (OpenAI unavailable).")
+            print(f"[WARNING] Stored heuristic insight for user {user_id} (OpenAI unavailable).")
             return {"status": "heuristic", "userId": user_id}
 
         structured_response = self._run_agent(user_id, snapshot)
@@ -63,12 +85,12 @@ class InsightAgentService:
         if not structured_response:
             fallback = self._build_fallback_document(snapshot)
             self.repository.save_insight_document(user_id, fallback)
-            print(f"⚠️ Agent returned no response for user {user_id}; stored heuristic insight.")
+            print(f"[WARNING] Agent returned no response for user {user_id}; stored heuristic insight.")
             return {"status": "heuristic", "userId": user_id}
 
         document = self._build_insight_document(snapshot, structured_response)
         self.repository.save_insight_document(user_id, document)
-        print(f"✅ Stored AI insight for user {user_id} with {len(document['keyMetrics'])} metrics.")
+        print(f"[SUCCESS] Stored AI insight for user {user_id} with {len(document['keyMetrics'])} metrics.")
         return {"status": "success", "userId": user_id, "insight": structured_response}
 
     # ------------------------------------------------------------------
@@ -295,7 +317,7 @@ class InsightAgentService:
                     parsed["iterations"] = iteration + 1
                     return parsed
                 except json.JSONDecodeError:
-                    print("⚠️ Failed to parse agent response as JSON.")
+                    print("[WARNING] Failed to parse agent response as JSON.")
                     return None
 
             for tool_call in response_message.tool_calls:
@@ -320,7 +342,7 @@ class InsightAgentService:
                     }
                 )
 
-        print("⚠️ Agent reached maximum iterations without final response.")
+        print("[WARNING] Agent reached maximum iterations without final response.")
         return None
 
     @staticmethod

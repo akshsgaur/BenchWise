@@ -12,7 +12,7 @@
 
 .chat-header {
   padding: 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #000000;
   color: white;
   text-align: center;
 }
@@ -66,16 +66,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 12px;
+  font-weight: 600;
   background: #f0f0f0;
+  color: #000000;
 }
 
 .message.user .message-avatar {
-  background: #667eea;
+  background: #000000;
+  color: white;
 }
 
 .message.assistant .message-avatar {
-  background: #764ba2;
+  background: #000000;
+  color: white;
 }
 
 .message-content {
@@ -84,7 +88,7 @@
 }
 
 .message.user .message-content {
-  background: #667eea;
+  background: #000000;
   color: white;
   padding: 12px 16px;
   border-radius: 18px 18px 4px 18px;
@@ -134,7 +138,7 @@
   margin: 0 0 12px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #667eea;
+  color: #000000;
 }
 
 .metrics-grid {
@@ -293,9 +297,9 @@
 }
 
 .question-chip:hover:not(:disabled) {
-  background: #667eea;
+  background: #000000;
   color: white;
-  border-color: #667eea;
+  border-color: #000000;
   transform: translateY(-1px);
 }
 
@@ -378,7 +382,7 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #000000;
 }
 
 .chat-input:disabled {
@@ -387,25 +391,27 @@
 }
 
 .send-button {
-  width: 48px;
-  height: 48px;
+  padding: 10px 24px;
   border: none;
-  background: #667eea;
+  background: #000000;
   color: white;
-  border-radius: 50%;
-  font-size: 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
+  min-width: 80px;
 }
 
 .send-button:hover:not(:disabled) {
-  background: #764ba2;
-  transform: scale(1.05);
+  background: #374151;
+  transform: none;
 }
 
 .send-button:disabled {
-  background: #cbd5e0;
+  background: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
 }
 

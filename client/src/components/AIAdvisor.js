@@ -205,7 +205,7 @@ function AIAdvisor() {
         {messages.map((message) => (
           <div key={message.id} className={`message ${message.type}`}>
             <div className="message-avatar">
-              {message.type === 'user' ? '👤' : '🤖'}
+              {message.type === 'user' ? 'You' : 'AI'}
             </div>
             <div className="message-content">
               {renderMessageContent(message)}
@@ -237,7 +237,7 @@ function AIAdvisor() {
 
         {isLoading && (
           <div className="message assistant">
-            <div className="message-avatar">🤖</div>
+            <div className="message-avatar">AI</div>
             <div className="message-content">
               <div className="typing-indicator">
                 <span></span>
@@ -273,13 +273,13 @@ function AIAdvisor() {
           onClick={handleSendMessage}
           disabled={!inputMessage.trim() || isLoading}
         >
-          {isLoading ? '⏳' : '📤'}
+          {isLoading ? '...' : 'Send'}
         </button>
       </div>
 
       <div className="chat-disclaimer">
         <small>
-          💡 This AI advisor analyzes your connected bank accounts to provide personalized financial insights.
+          This AI advisor analyzes your connected bank accounts to provide personalized financial insights.
         </small>
       </div>
     </div>

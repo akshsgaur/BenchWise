@@ -100,23 +100,19 @@
 
 .auth-left-feature {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 20px;
   font-size: 14px;
   opacity: 0.8;
+  line-height: 1.5;
 }
 
-.auth-left-feature-icon {
-  width: 20px;
-  height: 20px;
+.auth-feature-bullet {
   margin-right: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 16px;
+  line-height: 20px;
+  flex-shrink: 0;
 }
 
 .auth-header {

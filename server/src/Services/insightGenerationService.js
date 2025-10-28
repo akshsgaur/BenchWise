@@ -1,9 +1,100 @@
 const path = require('path');
-const { spawn } = require('child_process');
+const fs = require('fs');
+const { spawn, spawnSync } = require('child_process');
+
+function resolvePythonBinary() {
+  const explicit = process.env.PYTHON_PATH || process.env.PYTHON_EXECUTABLE;
+  if (explicit) {
+    return explicit;
+  }
+
+  const venv = process.env.VIRTUAL_ENV;
+  if (venv) {
+    const candidate = path.join(
+      venv,
+      process.platform === 'win32' ? 'Scripts' : 'bin',
+      process.platform === 'win32' ? 'python.exe' : 'python3'
+    );
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    const fallback = path.join(
+      venv,
+      process.platform === 'win32' ? 'Scripts' : 'bin',
+      process.platform === 'win32' ? 'python.exe' : 'python'
+    );
+    if (fs.existsSync(fallback)) {
+      return fallback;
+    }
+  }
+
+  const candidates = process.platform === 'win32'
+    ? ['python.exe', 'python3.exe', 'python', 'python3']
+    : ['python3', 'python', 'python3.12', 'python3.11'];
+
+  const fallbackPaths = process.platform === 'win32'
+    ? []
+    : [
+        '/opt/homebrew/bin/python3',
+        '/usr/local/bin/python3',
+        '/usr/bin/python3',
+        '/opt/homebrew/bin/python',
+        '/usr/local/bin/python',
+        '/usr/bin/python',
+      ];
+
+  const pathDirs = (process.env.PATH || '').split(path.delimiter);
+
+  const resolveOnPath = (name) => {
+    for (const dir of pathDirs) {
+      if (!dir) continue;
+      const candidatePath = path.join(dir, name);
+      if (fs.existsSync(candidatePath)) {
+        const stat = fs.statSync(candidatePath);
+        if (stat.isFile() || stat.isSymbolicLink()) {
+          return candidatePath;
+        }
+      }
+    }
+    return null;
+  };
+
+  for (const cmd of candidates) {
+    const resolved = resolveOnPath(cmd);
+    if (!resolved) {
+      continue;
+    }
+    const check = spawnSync(resolved, ['--version'], {
+      stdio: 'ignore',
+      env: process.env,
+    });
+    if (check.status === 0) {
+      return resolved;
+    }
+  }
+
+  for (const absolute of fallbackPaths) {
+    if (!fs.existsSync(absolute)) {
+      continue;
+    }
+    const check = spawnSync(absolute, ['--version'], {
+      stdio: 'ignore',
+      env: process.env,
+    });
+    if (check.status === 0) {
+      return absolute;
+    }
+  }
+
+  throw new Error(
+    'Unable to locate a Python interpreter. Set PYTHON_PATH or install python3.'
+  );
+}
 
 class InsightGenerationService {
   constructor() {
     this.isRunning = false;
+    this.pythonBinary = null;
   }
 
   async runForAllUsers() {
@@ -45,9 +136,17 @@ class InsightGenerationService {
   }
 
   executePythonAgent(options = {}) {
-    const pythonBinary = process.env.PYTHON_PATH || process.env.PYTHON_EXECUTABLE || 'python3';
-    const scriptPath = path.join(__dirname, '../../services/run_insight_agent.py');
-    const workingDirectory = path.join(__dirname, '../../services');
+    if (!this.pythonBinary) {
+      try {
+        this.pythonBinary = resolvePythonBinary();
+        console.log(`Using Python interpreter: ${this.pythonBinary}`);
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+
+    const scriptPath = path.join(__dirname, '../../../services/run_insight_agent.py');
+    const workingDirectory = path.join(__dirname, '../../../services');
 
     const args = [scriptPath];
     const periodDays = options.periodDays || process.env.INSIGHT_PERIOD_DAYS;
@@ -69,7 +168,7 @@ class InsightGenerationService {
     }
 
     return new Promise((resolve, reject) => {
-      const child = spawn(pythonBinary, args, {
+      const child = spawn(this.pythonBinary, args, {
         cwd: workingDirectory,
         env: { ...process.env },
       });

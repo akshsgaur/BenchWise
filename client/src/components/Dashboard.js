@@ -13,6 +13,7 @@ function Dashboard() {
   const [integrationStatus, setIntegrationStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [integrationRefreshKey, setIntegrationRefreshKey] = useState(Date.now());
 
   useEffect(() => {
     checkIntegrationStatus();
@@ -37,6 +38,9 @@ function Dashboard() {
       const response = await plaidAPI.getIntegrationStatus();
       console.log('Integration status response:', response.data);
       setIntegrationStatus(response.data);
+      if (response.data?.isIntegrated) {
+        setIntegrationRefreshKey(Date.now());
+      }
     } catch (error) {
       console.error('Error checking integration status:', error);
       // If there's an error (like 404 for no integration), treat as not integrated
@@ -52,6 +56,7 @@ function Dashboard() {
       hasPlaid: true,
       ...integration
     });
+    setIntegrationRefreshKey(Date.now());
   };
 
   const handleLogout = () => {
@@ -103,7 +108,7 @@ function Dashboard() {
             </div>
 
             <div className="tab-content">
-              {activeTab === 'overview' && <FinancialOverview />}
+              {activeTab === 'overview' && <FinancialOverview refreshKey={integrationRefreshKey} />}
               {activeTab === 'subscriptions' && <SubscriptionsOverview />}
               {activeTab === 'ai-advisor' && <AIAdvisor />}
             </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { plaidAPI, transactionAPI, insightsAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import './FinancialOverview.css';
 
-function FinancialOverview() {
+function FinancialOverview({ refreshKey = 0 }) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,16 +22,16 @@ function FinancialOverview() {
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [refreshKey]);
 
-  // Fetch transactions when component mounts
   useEffect(() => {
-    fetchTransactions(transactionsPeriod);
-  }, []);
+    setCurrentPage(1);
+    fetchTransactions(transactionsPeriod, 1);
+  }, [transactionsPeriod, refreshKey]);
 
   useEffect(() => {
     fetchInsight();
-  }, []);
+  }, [refreshKey]);
 
   const fetchAccounts = async () => {
     try {
@@ -133,8 +134,7 @@ function FinancialOverview() {
 
   const handleTransactionsPeriodChange = (value) => {
     setTransactionsPeriod(value);
-    setCurrentPage(1); // Reset to page 1 when changing period
-    fetchTransactions(value, 1);
+    setCurrentPage(1);
   };
 
   const handlePageChange = (newPage) => {
@@ -546,5 +546,9 @@ function FinancialOverview() {
     </div>
   );
 }
+
+FinancialOverview.propTypes = {
+  refreshKey: PropTypes.number,
+};
 
 export default FinancialOverview;

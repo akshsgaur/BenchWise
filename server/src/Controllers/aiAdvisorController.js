@@ -22,6 +22,7 @@ const askQuestion = async (req, res) => {
     }
 
     // Call Python AI chatbot service
+    console.log(`[INFO] Calling Python service at ${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`);
     const response = await axios.post(
       `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`,
       {
@@ -37,6 +38,12 @@ const askQuestion = async (req, res) => {
       }
     );
 
+    console.log('[INFO] Python service response received:', {
+      success: response.data.success,
+      hasData: !!response.data.data,
+      toolsUsed: response.data.data?.tools_used
+    });
+
     if (response.data.success) {
       res.json({
         success: true,
@@ -48,9 +55,19 @@ const askQuestion = async (req, res) => {
 
   } catch (error) {
     console.error('Error in AI Advisor askQuestion:', error.message);
+    console.error('Error details:', {
+      code: error.code,
+      response: error.response?.data,
+      status: error.response?.status,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method
+      }
+    });
 
     // Handle different error types
     if (error.code === 'ECONNREFUSED') {
+      console.error(`[ERROR] Cannot connect to Python service at ${PYTHON_AI_SERVICE_URL}`);
       return res.status(503).json({
         success: false,
         message: 'AI service is currently unavailable. Please make sure the Python service is running on port 8001.',

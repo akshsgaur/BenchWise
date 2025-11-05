@@ -40,7 +40,9 @@ class ChatbotAgent:
     """Conversational AI agent for personalized financial advice."""
 
     def __init__(self, mongo_uri: Optional[str] = None, db_name: Optional[str] = None):
+        print(f"[INFO] Initializing ChatbotAgent with MongoDB URI: {mongo_uri[:50] if mongo_uri else 'Not provided'}...")
         self.repository = InsightDataRepository(mongo_uri=mongo_uri, db_name=db_name)
+        print("[INFO] InsightDataRepository initialized")
 
         api_key = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
         base_url = os.getenv("ENDPOINT_URL")
@@ -53,10 +55,13 @@ class ChatbotAgent:
             base = f"{base_url.rstrip('/')}/openai/v1/" if base_url else None
             self.openai_client = OpenAI(api_key=api_key, base_url=base)
             self.model_name = deployment
+            print(f"[INFO] OpenAI client initialized with model: {deployment}")
         else:
             print("⚠️ ChatbotAgent initialized without OpenAI credentials")
+            print(f"[DEBUG] API Key present: {bool(api_key)}, Deployment: {deployment}")
 
         self.tools = self._define_tools()
+        print(f"[INFO] Defined {len(self.tools)} tools for the agent")
 
     def _define_tools(self) -> List[Dict[str, Any]]:
         """Define financial analysis tools available to the agent."""
@@ -158,12 +163,23 @@ class ChatbotAgent:
 
     def _execute_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a tool and return results."""
-        user_id = arguments.get("user_id")
+        # Normalize user_id - handle both "user_id" and "user" keys
+        user_id = arguments.get("user_id") or arguments.get("user")
         period_days = arguments.get("period_days", 60)
+
+        if not user_id:
+            print(f"[ERROR] Tool {tool_name} called without user_id. Arguments: {arguments}")
+            return {"error": "user_id is required"}
+
+        print(f"[DEBUG] Executing tool {tool_name} for user_id: {user_id}, period_days: {period_days}")
 
         try:
             snapshot = self.repository.get_snapshot(user_id, period_days)
+        except Exception as exc:
+            print(f"[ERROR] Failed to get snapshot in tool {tool_name} for user {user_id}: {exc}")
+            return {"error": f"Failed to retrieve financial data: {str(exc)}"}
 
+        try:
             if tool_name == "get_account_balances":
                 return {
                     "accountSummary": snapshot["accountSummary"],
@@ -240,7 +256,8 @@ class ChatbotAgent:
                 return {"error": f"Unknown tool: {tool_name}"}
 
         except Exception as exc:
-            return {"error": str(exc)}
+            print(f"[ERROR] Error executing tool {tool_name}: {exc}")
+            return {"error": f"Tool execution failed: {str(exc)}"}
 
     def answer_question(
         self,
@@ -250,8 +267,10 @@ class ChatbotAgent:
         max_iterations: int = 8,
     ) -> Dict[str, Any]:
         """Answer a user's financial question using agentic workflow."""
+        print(f"[INFO] answer_question called - User ID: {user_id}, Question: {question[:100]}")
 
         if not self.openai_client or not self.model_name:
+            print("[WARNING] OpenAI client not configured")
             return {
                 "answer": {
                     "summary": "AI service unavailable",
@@ -263,8 +282,10 @@ class ChatbotAgent:
                 "iterations": 0,
             }
 
-        # Get initial context
-        snapshot = self.repository.get_snapshot(user_id, period_days=60)
+        # Note: Each tool will fetch its own snapshot, so we don't need to pre-fetch here
+        # This allows tools to handle errors gracefully and the agent can adapt
+
+        print(f"[INFO] Starting agent loop for user {user_id}")
 
         system_prompt = """You are BenchWise's AI Financial Advisor. You help users understand their finances through conversational Q&A.
 
@@ -277,6 +298,8 @@ Your role:
 
 Guidelines:
 - Call relevant tools to get accurate, up-to-date information
+- When calling tools, ALWAYS use the parameter name "user_id" (not "user" or any other variant)
+- The user_id parameter will be automatically provided - you don't need to include it in your tool calls
 - Explain financial concepts in simple terms
 - Highlight both risks and opportunities
 - Provide concrete next steps the user can take
@@ -297,6 +320,7 @@ Guidelines:
 
         # Agent loop
         for iteration in range(max_iterations):
+            print(f"[INFO] Agent iteration {iteration + 1}/{max_iterations} for user {user_id}")
             response = self.openai_client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
@@ -316,6 +340,7 @@ Guidelines:
 
             # No more tools to call - generate final structured answer
             if not response_message.tool_calls:
+                print(f"[INFO] No more tool calls, generating final response for user {user_id}")
                 final_response = self.openai_client.chat.completions.create(
                     model=self.model_name,
                     messages=messages
@@ -355,20 +380,40 @@ Guidelines:
                 except json.JSONDecodeError:
                     function_args = {}
 
-                # Inject user_id if not present
-                function_args.setdefault("user_id", user_id)
+                # Normalize user_id parameter - handle both "user_id" and "user" keys
+                # The AI agent might use different parameter names
+                if "user" in function_args and "user_id" not in function_args:
+                    function_args["user_id"] = function_args.pop("user")
+                
+                # Always inject user_id from the request context
+                function_args["user_id"] = user_id
+                
+                print(f"[DEBUG] Executing tool {function_name} with args: {json.dumps({k: v if k != 'user_id' else '***' for k, v in function_args.items()}, default=str)}")
 
                 tool_result = self._execute_tool(function_name, function_args)
                 tools_used.append(function_name)
 
-                messages.append(
-                    {
-                        "tool_call_id": tool_call.id,
-                        "role": "tool",
-                        "name": function_name,
-                        "content": json.dumps(tool_result, default=str),
-                    }
-                )
+                # Check if tool returned an error
+                if isinstance(tool_result, dict) and "error" in tool_result:
+                    print(f"[WARNING] Tool {function_name} returned error: {tool_result['error']}")
+                    # Include error in tool response so agent knows what went wrong
+                    messages.append(
+                        {
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": json.dumps(tool_result, default=str),
+                        }
+                    )
+                else:
+                    messages.append(
+                        {
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": json.dumps(tool_result, default=str),
+                        }
+                    )
 
         # Max iterations reached
         return {
@@ -437,20 +482,24 @@ Guidelines:
 
 
 # Global chatbot instance
+print("[INFO] Initializing ChatbotAgent...")
 chatbot_agent = ChatbotAgent(
     mongo_uri=os.getenv("MONGODB_URI"),
     db_name=os.getenv("MONGODB_DB_NAME", "benchwise"),
 )
+print("[INFO] ChatbotAgent initialized successfully")
 
 
 @app.get("/health")
 def health_check():
+    print("[INFO] Health check endpoint called")
     return {"status": "healthy", "service": "BenchWise AI Chatbot", "timestamp": datetime.utcnow().isoformat()}
 
 
 @app.post("/api/v1/chatbot/query")
 def chat_query(request: ChatRequest):
     """Answer user's financial question using agentic AI."""
+    print(f"[INFO] Received chat query - User ID: {request.user_id}, Question: {request.question[:100]}")
     try:
         result = chatbot_agent.answer_question(
             user_id=request.user_id,
@@ -458,6 +507,7 @@ def chat_query(request: ChatRequest):
             conversation_history=request.conversation_history,
         )
 
+        print(f"[INFO] Chat query completed - User ID: {request.user_id}, Tools used: {result.get('tools_used', 0)}")
         return {
             "success": True,
             "data": {
@@ -468,10 +518,15 @@ def chat_query(request: ChatRequest):
         }
 
     except Exception as exc:
+        print(f"[ERROR] Chat query failed - User ID: {request.user_id}, Error: {str(exc)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(exc))
 
 
 if __name__ == "__main__":
     import uvicorn
-
+    print("[INFO] Starting BenchWise AI Chatbot service on port 8001")
+    print(f"[INFO] MongoDB URI: {os.getenv('MONGODB_URI', 'Not set')[:50]}...")
+    print(f"[INFO] OpenAI Model: {os.getenv('DEPLOYMENT_NAME') or os.getenv('OPENAI_MODEL', 'Not set')}")
     uvicorn.run(app, host="0.0.0.0", port=8001)

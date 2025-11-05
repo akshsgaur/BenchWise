@@ -1,32 +1,17 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './Header.css';
 
 function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const handleDashboardClick = () => {
-    if (location.pathname !== '/dashboard') {
-      navigate('/dashboard', { replace: true });
-    }
-  };
-
-  const handleProfileClick = () => {
-    if (location.pathname !== '/profile') {
-      navigate('/profile', { replace: true });
-    }
-  };
-
-  const isDashboard = location.pathname === '/dashboard';
-  const isProfile = location.pathname === '/profile';
 
   return (
     <header className="header">
@@ -34,11 +19,11 @@ function Header() {
         <div className="header-left">
           <div 
             className="logo" 
-            onClick={handleDashboardClick}
+            onClick={() => navigate('/dashboard')}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                handleDashboardClick();
+                navigate('/dashboard');
               }
             }}
             role="button"
@@ -52,31 +37,6 @@ function Header() {
         <div className="header-right">
           {user && (
             <>
-              <nav className="header-nav">
-                <button 
-                  className={`nav-link ${isDashboard ? 'active' : ''}`}
-                  onClick={handleDashboardClick}
-                  title="Dashboard"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                    <rect x="14" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                    <rect x="3" y="14" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                    <rect x="14" y="14" width="7" height="7" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                  </svg>
-                </button>
-                <button 
-                  className={`nav-link ${isProfile ? 'active' : ''}`}
-                  onClick={handleProfileClick}
-                  title="Profile"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                    <path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-                  </svg>
-                </button>
-              </nav>
-
               <div className="user-menu">
                 <div className="user-info">
                   <div className="user-avatar">

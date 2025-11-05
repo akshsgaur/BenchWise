@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 import './Profile.css';
 
-function Profile() {
+function Profile({ initialTab = null, embedded = false }) {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(initialTab || searchParams.get('tab') || 'profile');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -35,6 +36,23 @@ function Profile() {
       username: user?.username || ''
     });
   }, [user]);
+
+  useEffect(() => {
+    // Update active tab based on URL params (only if not embedded)
+    if (!embedded) {
+      const tab = searchParams.get('tab');
+      if (tab === 'account' || tab === 'profile') {
+        setActiveTab(tab);
+      }
+    }
+  }, [searchParams, embedded]);
+
+  useEffect(() => {
+    // Update tab when initialTab prop changes (for embedded mode)
+    if (embedded && initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, embedded]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -82,28 +100,32 @@ function Profile() {
   };
 
   return (
-    <div className="profile-page">
+    <div className={`profile-page ${embedded ? 'embedded' : ''}`}>
       <div className="profile-container">
-        <div className="profile-header">
-          <h1>Profile Settings</h1>
-          <p>Manage your account information and preferences</p>
-        </div>
+        {!embedded && (
+          <div className="profile-header">
+            <h1>Profile Settings</h1>
+            <p>Manage your account information and preferences</p>
+          </div>
+        )}
 
         <div className="profile-content">
-          <div className="profile-tabs">
-            <button 
-              className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => setActiveTab('profile')}
-            >
-              Profile
-            </button>
-            <button 
-              className={`tab-btn ${activeTab === 'account' ? 'active' : ''}`}
-              onClick={() => setActiveTab('account')}
-            >
-              Account
-            </button>
-          </div>
+          {!embedded && (
+            <div className="profile-tabs">
+              <button 
+                className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
+                onClick={() => setActiveTab('profile')}
+              >
+                Profile
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'account' ? 'active' : ''}`}
+                onClick={() => setActiveTab('account')}
+              >
+                Account
+              </button>
+            </div>
+          )}
 
           {activeTab === 'profile' && (
             <div className="profile-panel">

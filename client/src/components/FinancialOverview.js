@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { plaidAPI, transactionAPI, insightsAPI } from '../services/api';
-import PlaidIntegration from './PlaidIntegration';
 import './FinancialOverview.css';
 
 function FinancialOverview({ refreshKey = 0 }) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showAddBank, setShowAddBank] = useState(false);
   const [bankConnections, setBankConnections] = useState([]);
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
   const [transactions, setTransactions] = useState([]);
@@ -47,10 +45,6 @@ function FinancialOverview({ refreshKey = 0 }) {
     }
   };
 
-  const handleBankConnectionComplete = () => {
-    setShowAddBank(false);
-    fetchAccounts(); // Refresh the accounts list
-  };
 
   const fetchTransactions = async (period, page = 1) => {
     try {
@@ -201,23 +195,6 @@ function FinancialOverview({ refreshKey = 0 }) {
     );
   }
 
-  if (showAddBank) {
-    return (
-      <div className="financial-overview">
-        <div className="add-bank-header">
-          <h2>Connect Another Bank Account</h2>
-          <button 
-            className="back-btn" 
-            onClick={() => setShowAddBank(false)}
-          >
-            ← Back to Overview
-          </button>
-        </div>
-        <PlaidIntegration onIntegrationComplete={handleBankConnectionComplete} />
-      </div>
-    );
-  }
-
   return (
     <div className="financial-overview">
       <div className="overview-header">
@@ -229,12 +206,6 @@ function FinancialOverview({ refreshKey = 0 }) {
       <div className="connected-banks-section">
         <div className="connected-banks-header">
           <h3>Connected Banks</h3>
-          <button 
-            className="connect-btn"
-            onClick={() => setShowAddBank(true)}
-          >
-            + Connect Another Bank
-          </button>
         </div>
         <div className="connected-banks-list">
           {bankConnections.map((bank, index) => (
@@ -272,8 +243,8 @@ function FinancialOverview({ refreshKey = 0 }) {
         </div>
       </div>
 
-      <div className="accounts-section">
-        <div className="analytics-grid">
+      <div className="accounts-transactions-section">
+        <div className="analytics-grid two-column">
           {/* View Accounts Widget */}
           <div className="analytics-widget accounts-widget">
             <div className="widget-header">
@@ -333,12 +304,7 @@ function FinancialOverview({ refreshKey = 0 }) {
               )}
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="transactions-section">
-        <div className="analytics-grid">
-          
           {/* View Transactions Widget */}
           <div className="analytics-widget transactions-widget">
             <div className="widget-header">
@@ -433,7 +399,6 @@ function FinancialOverview({ refreshKey = 0 }) {
               )}
             </div>
           </div>
-
         </div>
       </div>
 

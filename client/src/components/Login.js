@@ -43,7 +43,7 @@ function Login() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container login-page">
       <div className="auth-left">
         <div className="auth-left-content">
           <h1 className="auth-left-title">Welcome Back</h1>

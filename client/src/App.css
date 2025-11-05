@@ -537,6 +537,11 @@
   width: calc(100% - 260px);
 }
 
+.tab-content-wrapper:has(.ai-advisor-container) {
+  padding: 0;
+  overflow: hidden;
+}
+
 .tab-content {
   flex: 1;
   display: flex;

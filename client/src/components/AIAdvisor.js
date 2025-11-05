@@ -276,12 +276,6 @@ function AIAdvisor() {
           {isLoading ? '...' : 'Send'}
         </button>
       </div>
-
-      <div className="chat-disclaimer">
-        <small>
-          This AI advisor analyzes your connected bank accounts to provide personalized financial insights.
-        </small>
-      </div>
     </div>
   );
 }

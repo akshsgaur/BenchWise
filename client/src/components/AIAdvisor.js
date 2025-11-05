@@ -205,7 +205,18 @@ function AIAdvisor() {
         {messages.map((message) => (
           <div key={message.id} className={`message ${message.type}`}>
             <div className="message-avatar">
-              {message.type === 'user' ? 'You' : 'AI'}
+              {message.type === 'user' ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+              )}
             </div>
             <div className="message-content">
               {renderMessageContent(message)}
@@ -237,7 +248,13 @@ function AIAdvisor() {
 
         {isLoading && (
           <div className="message assistant">
-            <div className="message-avatar">AI</div>
+            <div className="message-avatar">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
             <div className="message-content">
               <div className="typing-indicator">
                 <span></span>

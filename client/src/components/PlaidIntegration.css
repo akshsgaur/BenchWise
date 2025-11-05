@@ -1,13 +1,24 @@
 .plaid-integration {
   width: 100%;
   padding: 0;
-  background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
+  background: linear-gradient(135deg, #fafafa 0%, #f3f4f6 50%, #ffffff 100%);
   display: flex;
   flex-direction: column;
   min-height: auto;
   max-height: calc(100vh - 72px - 72px);
   overflow: hidden;
-  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.plaid-integration::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent);
 }
 
 @keyframes fadeIn {
@@ -23,13 +34,15 @@
 
 .plaid-container {
   display: flex;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
   flex: 1;
   min-height: 0;
   height: 100%;
   max-height: 100%;
   overflow: hidden;
+  gap: 24px;
+  padding: 32px 24px;
 }
 
 .plaid-loading {
@@ -37,17 +50,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  padding: 60px 20px;
+  min-height: 400px;
 }
 
 .plaid-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top: 3px solid #000000;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(0, 0, 0, 0.05);
+  border-top: 4px solid #000000;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
+  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  margin-bottom: 20px;
+}
+
+.plaid-loading p {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 @keyframes spin {
@@ -58,18 +78,19 @@
 /* Left Side Styles */
 .plaid-left {
   flex: 1;
-  padding: 20px;
-  background: #ffffff;
+  padding: 0;
+  background: transparent;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .plaid-header {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   text-align: left;
-  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+  animation: slideDown 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
 }
 
 @keyframes slideDown {
@@ -84,12 +105,12 @@
 }
 
 .plaid-header h1 {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 700;
   color: #000000;
   margin-bottom: 8px;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
   background: linear-gradient(135deg, #000000 0%, #374151 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -97,86 +118,105 @@
 }
 
 .plaid-header p {
-  font-size: 13px;
+  font-size: 14px;
   color: #6b7280;
   line-height: 1.5;
   max-width: 100%;
   margin: 0;
+  font-weight: 400;
 }
 
 .plaid-error {
-  background: #fef2f2;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   border: 1px solid #fecaca;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 16px;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
   color: #dc2626;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08);
+  animation: shake 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 .plaid-error p {
-  margin: 0 0 6px 0;
-  font-size: 12px;
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .plaid-retry-btn {
-  background: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
 }
 
 .plaid-retry-btn:hover {
-  background: #b91c1c;
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .plaid-benefits {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   min-height: 0;
 }
 
 .plaid-benefit {
-  padding: 14px;
+  padding: 16px;
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+}
+
+.plaid-benefit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #000000 0%, #374151 100%);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.plaid-benefit:hover::before {
+  transform: scaleY(1);
 }
 
 .plaid-benefit:nth-child(1) {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .plaid-benefit:nth-child(2) {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .plaid-benefit:nth-child(3) {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
-}
-
-.plaid-benefit:nth-child(4) {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.35s both;
-}
-
-.plaid-benefit:nth-child(5) {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
-}
-
-.plaid-benefit:nth-child(n+6) {
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.45s both;
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 @keyframes slideUp {
@@ -191,13 +231,36 @@
 }
 
 .plaid-benefit:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
-  border-color: #d1d5db;
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.plaid-benefit-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000000;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.plaid-benefit:hover .plaid-benefit-icon {
+  background: linear-gradient(135deg, #000000 0%, #374151 100%);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+
+.plaid-benefit-content {
+  flex: 1;
 }
 
 .plaid-benefit-content h3 {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: #000000;
   margin: 0 0 4px 0;
@@ -205,18 +268,18 @@
 }
 
 .plaid-benefit-content p {
-  font-size: 12px;
+  font-size: 13px;
   color: #6b7280;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.5;
   max-width: 100%;
 }
 
 /* Right Side Styles */
 .plaid-right {
   flex: 1;
-  padding: 20px;
-  background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
+  padding: 0;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -225,57 +288,96 @@
 
 .plaid-connect-card {
   background: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07), 0 10px 30px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04), 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   max-width: 100%;
   width: 100%;
   text-align: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  position: relative;
+  overflow: hidden;
+}
+
+.plaid-connect-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.08), transparent);
 }
 
 .plaid-connect-card:hover {
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1), 0 20px 40px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1), 0 20px 48px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 .plaid-connect-card h2 {
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 700;
   color: #000000;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .plaid-connect-card > p {
-  font-size: 13px;
+  font-size: 14px;
   color: #6b7280;
   line-height: 1.5;
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .plaid-connect-btn {
   background: linear-gradient(135deg, #000000 0%, #1f2937 100%);
   color: white;
   border: none;
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   width: 100%;
-  min-height: 44px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-height: 48px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+.plaid-connect-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.plaid-connect-btn:hover::before {
+  left: 100%;
 }
 
 .plaid-connect-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.plaid-connect-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .plaid-connect-btn:disabled {
@@ -285,12 +387,25 @@
   box-shadow: none;
 }
 
+.plaid-btn-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 .plaid-features {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 16px;
   text-align: left;
+  padding: 16px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 .plaid-feature {
@@ -298,69 +413,87 @@
   align-items: center;
   gap: 10px;
   font-size: 13px;
-  color: #6b7280;
-  padding: 4px 0;
+  color: #374151;
+  padding: 0;
+  font-weight: 500;
 }
 
-.feature-check {
-  color: #10b981;
-  font-weight: 600;
-  font-size: 16px;
+.plaid-feature-icon {
   flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
 }
 
 .plaid-disclaimer {
   font-size: 11px;
   color: #9ca3af;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
   .plaid-container {
     flex-direction: column;
-  }
-  
-  .plaid-left {
-    padding: 30px 20px;
-  }
-  
-  .plaid-right {
-    padding: 30px 20px;
+    gap: 24px;
+    padding: 32px 24px;
   }
   
   .plaid-header h1 {
     font-size: 32px;
   }
   
-  .plaid-header p {
-    font-size: 16px;
+  .plaid-connect-card {
+    padding: 32px 28px;
   }
 }
 
 @media (max-width: 768px) {
-  .plaid-left {
+  .plaid-container {
     padding: 24px 20px;
+    gap: 24px;
   }
-  
-  .plaid-right {
-    padding: 24px 20px;
-  }
-  
-  .plaid-connect-card {
-    padding: 28px 20px;
-  }
-  
+
   .plaid-header h1 {
     font-size: 28px;
   }
   
   .plaid-header p {
-    font-size: 15px;
+    font-size: 14px;
+  }
+  
+  .plaid-connect-card {
+    padding: 28px 24px;
   }
   
   .plaid-connect-card h2 {
     font-size: 24px;
+  }
+
+  .plaid-benefit {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .plaid-benefit-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .plaid-benefit-content h3 {
+    font-size: 15px;
+  }
+
+  .plaid-benefit-content p {
+    font-size: 13px;
   }
 }

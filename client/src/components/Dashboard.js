@@ -61,6 +61,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [integrationRefreshKey, setIntegrationRefreshKey] = useState(Date.now());
   const [showAddBank, setShowAddBank] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [tabTransition, setTabTransition] = useState(false);
 
   // Get active tab from URL or default to 'overview'
   const activeTab = searchParams.get('tab') || 'overview';
@@ -68,6 +70,13 @@ function Dashboard() {
   useEffect(() => {
     checkIntegrationStatus();
   }, []);
+
+  useEffect(() => {
+    if (!loading && integrationStatus?.isIntegrated) {
+      // Trigger sidebar animation after a brief delay
+      setTimeout(() => setIsMounted(true), 100);
+    }
+  }, [loading, integrationStatus]);
 
   // Set default tab in URL if none exists (only on initial load)
   useEffect(() => {
@@ -115,11 +124,20 @@ function Dashboard() {
   };
 
   const handleTabChange = (tab) => {
-    setSearchParams({ tab });
+    // Smooth tab transition
+    setTabTransition(true);
+    setTimeout(() => {
+      setSearchParams({ tab });
+      setTimeout(() => setTabTransition(false), 300);
+    }, 150);
   };
 
   const handleConnectBank = () => {
-    setSearchParams({ tab: 'connect-bank' });
+    setTabTransition(true);
+    setTimeout(() => {
+      setSearchParams({ tab: 'connect-bank' });
+      setTimeout(() => setTabTransition(false), 300);
+    }, 150);
   };
 
   const handleLogout = () => {
@@ -144,12 +162,13 @@ function Dashboard() {
           <PlaidIntegration onIntegrationComplete={handleIntegrationComplete} />
         </div>
       ) : (
-        <div className="integrated-dashboard">
-          <div className="dashboard-sidebar">
+        <div className={`integrated-dashboard ${isMounted ? 'mounted' : ''}`}>
+          <div className={`dashboard-sidebar ${isMounted ? 'mounted' : ''}`}>
             <div className="dashboard-tabs">
               <button
                 className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => handleTabChange('overview')}
+                style={{ animationDelay: isMounted ? '0.1s' : '0s' }}
               >
                 <FinancialIcon />
                 Financial Overview
@@ -157,6 +176,7 @@ function Dashboard() {
               <button
                 className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
                 onClick={() => handleTabChange('subscriptions')}
+                style={{ animationDelay: isMounted ? '0.15s' : '0s' }}
               >
                 <SubscriptionIcon />
                 Subscription Overview
@@ -164,6 +184,7 @@ function Dashboard() {
               <button
                 className={`tab-btn ${activeTab === 'ai-advisor' ? 'active' : ''}`}
                 onClick={() => handleTabChange('ai-advisor')}
+                style={{ animationDelay: isMounted ? '0.2s' : '0s' }}
               >
                 <AIIcon />
                 AI Financial Advisor
@@ -171,6 +192,7 @@ function Dashboard() {
               <button
                 className={`tab-btn connect-bank-btn ${showAddBank ? 'active' : ''}`}
                 onClick={handleConnectBank}
+                style={{ animationDelay: isMounted ? '0.25s' : '0s' }}
               >
                 <ConnectBankIcon />
                 Connect Another Bank
@@ -178,6 +200,7 @@ function Dashboard() {
               <button
                 className={`tab-btn connect-bank-btn ${activeTab === 'profile' ? 'active' : ''}`}
                 onClick={() => handleTabChange('profile')}
+                style={{ animationDelay: isMounted ? '0.3s' : '0s' }}
               >
                 <ProfileIcon />
                 Profile Management
@@ -185,6 +208,7 @@ function Dashboard() {
               <button
                 className={`tab-btn connect-bank-btn ${activeTab === 'account' ? 'active' : ''}`}
                 onClick={() => handleTabChange('account')}
+                style={{ animationDelay: isMounted ? '0.35s' : '0s' }}
               >
                 <AccountIcon />
                 Account Management
@@ -192,7 +216,7 @@ function Dashboard() {
             </div>
           </div>
 
-          <div className="tab-content-wrapper">
+          <div className={`tab-content-wrapper ${isMounted ? 'mounted' : ''}`}>
             {showAddBank ? (
               <div className="add-bank-modal">
                 <PlaidIntegration 
@@ -200,7 +224,7 @@ function Dashboard() {
                 />
               </div>
             ) : (
-              <div className="tab-content">
+              <div className={`tab-content ${tabTransition ? 'transitioning' : ''}`}>
                 {activeTab === 'overview' && <FinancialOverview refreshKey={integrationRefreshKey} />}
                 {activeTab === 'subscriptions' && <SubscriptionsOverview />}
                 {activeTab === 'ai-advisor' && <AIAdvisor />}

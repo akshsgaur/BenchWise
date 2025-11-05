@@ -469,8 +469,19 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   transform: translateX(0);
+}
+
+.dashboard-tabs .tab-btn svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.dashboard-tabs .tab-btn:hover svg,
+.dashboard-tabs .tab-btn.active svg {
+  opacity: 1;
 }
 
 .dashboard-tabs .tab-btn:hover {

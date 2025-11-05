@@ -43,7 +43,7 @@ function Login() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container login-page">
       <div className="auth-left">
         <div className="auth-left-content">
           <h1 className="auth-left-title">Welcome Back</h1>
@@ -52,15 +52,15 @@ function Login() {
           </p>
           <div className="auth-left-features">
             <div className="auth-left-feature">
-              <div className="auth-left-feature-icon">📊</div>
+              <span className="auth-feature-bullet">•</span>
               <span>Track your investments and portfolio performance</span>
             </div>
             <div className="auth-left-feature">
-              <div className="auth-left-feature-icon">🤖</div>
+              <span className="auth-feature-bullet">•</span>
               <span>Get AI-powered financial insights and recommendations</span>
             </div>
             <div className="auth-left-feature">
-              <div className="auth-left-feature-icon">🔒</div>
+              <span className="auth-feature-bullet">•</span>
               <span>Secure banking integration with Plaid</span>
             </div>
           </div>

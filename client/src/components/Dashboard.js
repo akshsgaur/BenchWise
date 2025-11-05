@@ -1,34 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { plaidAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import FinancialOverview from './FinancialOverview';
 import SubscriptionsOverview from './SubscriptionsOverview';
+import AIAdvisor from './AIAdvisor';
+import Profile from './Profile';
 
 function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [integrationStatus, setIntegrationStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [integrationRefreshKey, setIntegrationRefreshKey] = useState(Date.now());
+  const [showAddBank, setShowAddBank] = useState(false);
+
+  // Get active tab from URL or default to 'overview'
+  const activeTab = searchParams.get('tab') || 'overview';
 
   useEffect(() => {
     checkIntegrationStatus();
   }, []);
 
-  // Prevent going back to login page
+  // Set default tab in URL if none exists (only on initial load)
   useEffect(() => {
-    const handlePopState = (event) => {
-      // If user tries to go back and we're on dashboard, stay on dashboard
-      if (window.location.pathname === '/dashboard') {
-        navigate('/dashboard', { replace: true });
-      }
-    };
+    const currentTab = searchParams.get('tab');
+    if (!currentTab && location.pathname === '/dashboard') {
+      setSearchParams({ tab: 'overview' }, { replace: true });
+    }
+  }, [location.pathname, searchParams, setSearchParams]);
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [navigate]);
+  // Update showAddBank when URL changes
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    setShowAddBank(tab === 'connect-bank');
+  }, [searchParams]);
 
   const checkIntegrationStatus = async () => {
     try {
@@ -36,6 +45,9 @@ function Dashboard() {
       const response = await plaidAPI.getIntegrationStatus();
       console.log('Integration status response:', response.data);
       setIntegrationStatus(response.data);
+      if (response.data?.isIntegrated) {
+        setIntegrationRefreshKey(Date.now());
+      }
     } catch (error) {
       console.error('Error checking integration status:', error);
       // If there's an error (like 404 for no integration), treat as not integrated
@@ -51,6 +63,19 @@ function Dashboard() {
       hasPlaid: true,
       ...integration
     });
+    setIntegrationRefreshKey(Date.now());
+  };
+
+  const handleBankConnectionComplete = () => {
+    setSearchParams({ tab: 'overview' });
+  };
+
+  const handleTabChange = (tab) => {
+    setSearchParams({ tab });
+  };
+
+  const handleConnectBank = () => {
+    setSearchParams({ tab: 'connect-bank' });
   };
 
   const handleLogout = () => {
@@ -70,38 +95,73 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      <div className="container">
-        <div className="dashboard-header">
-          <h1 className="dashboard-title">Dashboard</h1>
-        </div>
-
-        {!integrationStatus?.isIntegrated ? (
+      {!integrationStatus?.isIntegrated ? (
+        <div className="container">
           <PlaidIntegration onIntegrationComplete={handleIntegrationComplete} />
-        ) : (
-          <div className="integrated-dashboard">
-
+        </div>
+      ) : (
+        <div className="integrated-dashboard">
+          <div className="dashboard-sidebar">
             <div className="dashboard-tabs">
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-                onClick={() => setActiveTab('overview')}
+                onClick={() => handleTabChange('overview')}
               >
                 Financial Overview
               </button>
-              <button 
+              <button
                 className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
-                onClick={() => setActiveTab('subscriptions')}
+                onClick={() => handleTabChange('subscriptions')}
               >
-                Subscriptions Overview
+                Subscription Overview
+              </button>
+              <button
+                className={`tab-btn ${activeTab === 'ai-advisor' ? 'active' : ''}`}
+                onClick={() => handleTabChange('ai-advisor')}
+              >
+                AI Financial Advisor
+              </button>
+              <button
+                className={`tab-btn connect-bank-btn ${showAddBank ? 'active' : ''}`}
+                onClick={handleConnectBank}
+              >
+                Connect Another Bank
+              </button>
+              <button
+                className={`tab-btn connect-bank-btn ${activeTab === 'profile' ? 'active' : ''}`}
+                onClick={() => handleTabChange('profile')}
+              >
+                Profile Management
+              </button>
+              <button
+                className={`tab-btn connect-bank-btn ${activeTab === 'account' ? 'active' : ''}`}
+                onClick={() => handleTabChange('account')}
+              >
+                Account Management
               </button>
             </div>
-
-            <div className="tab-content">
-              {activeTab === 'overview' && <FinancialOverview />}
-              {activeTab === 'subscriptions' && <SubscriptionsOverview />}
-            </div>
           </div>
-        )}
-      </div>
+
+          <div className="tab-content-wrapper">
+            {showAddBank ? (
+              <div className="add-bank-modal">
+                <PlaidIntegration 
+                  onIntegrationComplete={handleBankConnectionComplete} 
+                />
+              </div>
+            ) : (
+              <div className="tab-content">
+                {activeTab === 'overview' && <FinancialOverview refreshKey={integrationRefreshKey} />}
+                {activeTab === 'subscriptions' && <SubscriptionsOverview />}
+                {activeTab === 'ai-advisor' && <AIAdvisor />}
+                {(activeTab === 'profile' || activeTab === 'account') && (
+                  <Profile initialTab={activeTab} embedded={true} />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

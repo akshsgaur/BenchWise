@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { plaidAPI, transactionAPI } from '../services/api';
-import PlaidIntegration from './PlaidIntegration';
+import PropTypes from 'prop-types';
+import { plaidAPI, transactionAPI, insightsAPI } from '../services/api';
 import './FinancialOverview.css';
 
-function FinancialOverview() {
+function FinancialOverview({ refreshKey = 0 }) {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showAddBank, setShowAddBank] = useState(false);
   const [bankConnections, setBankConnections] = useState([]);
   const [transactionsPeriod, setTransactionsPeriod] = useState('last-30-days');
   const [transactions, setTransactions] = useState([]);
@@ -15,15 +14,22 @@ function FinancialOverview() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(true);
+  const [insightError, setInsightError] = useState('');
 
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [refreshKey]);
 
-  // Fetch transactions when component mounts
   useEffect(() => {
-    fetchTransactions(transactionsPeriod);
-  }, []);
+    setCurrentPage(1);
+    fetchTransactions(transactionsPeriod, 1);
+  }, [transactionsPeriod, refreshKey]);
+
+  useEffect(() => {
+    fetchInsight();
+  }, [refreshKey]);
 
   const fetchAccounts = async () => {
     try {
@@ -39,10 +45,6 @@ function FinancialOverview() {
     }
   };
 
-  const handleBankConnectionComplete = () => {
-    setShowAddBank(false);
-    fetchAccounts(); // Refresh the accounts list
-  };
 
   const fetchTransactions = async (period, page = 1) => {
     try {
@@ -102,10 +104,31 @@ function FinancialOverview() {
     }
   };
 
+  const fetchInsight = async () => {
+    try {
+      setInsightLoading(true);
+      setInsightError('');
+      const response = await insightsAPI.getLatestInsight();
+      if (response.data?.success) {
+        setInsight(response.data.data);
+      } else if (response.data?.data) {
+        setInsight(response.data.data);
+      } else {
+        setInsight(null);
+        setInsightError('Unable to load AI insights at this time.');
+      }
+    } catch (err) {
+      console.error('Error fetching AI insights:', err);
+      setInsight(null);
+      setInsightError('Unable to load AI insights at this time.');
+    } finally {
+      setInsightLoading(false);
+    }
+  };
+
   const handleTransactionsPeriodChange = (value) => {
     setTransactionsPeriod(value);
-    setCurrentPage(1); // Reset to page 1 when changing period
-    fetchTransactions(value, 1);
+    setCurrentPage(1);
   };
 
   const handlePageChange = (newPage) => {
@@ -122,6 +145,29 @@ function FinancialOverview() {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const formatMetricValue = (metric) => {
+    if (!metric) return '—';
+    if (metric.displayValue) return metric.displayValue;
+    if (typeof metric.value === 'number') {
+      return formatCurrency(metric.value);
+    }
+    return '—';
+  };
+
+  const formatGeneratedTime = (timestamp) => {
+    if (!timestamp) return null;
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
 
@@ -149,23 +195,6 @@ function FinancialOverview() {
     );
   }
 
-  if (showAddBank) {
-    return (
-      <div className="financial-overview">
-        <div className="add-bank-header">
-          <h2>Connect Another Bank Account</h2>
-          <button 
-            className="back-btn" 
-            onClick={() => setShowAddBank(false)}
-          >
-            ← Back to Overview
-          </button>
-        </div>
-        <PlaidIntegration onIntegrationComplete={handleBankConnectionComplete} />
-      </div>
-    );
-  }
-
   return (
     <div className="financial-overview">
       <div className="overview-header">
@@ -177,12 +206,6 @@ function FinancialOverview() {
       <div className="connected-banks-section">
         <div className="connected-banks-header">
           <h3>Connected Banks</h3>
-          <button 
-            className="connect-btn"
-            onClick={() => setShowAddBank(true)}
-          >
-            + Connect Another Bank
-          </button>
         </div>
         <div className="connected-banks-list">
           {bankConnections.map((bank, index) => (
@@ -220,8 +243,8 @@ function FinancialOverview() {
         </div>
       </div>
 
-      <div className="accounts-section">
-        <div className="analytics-grid">
+      <div className="accounts-transactions-section">
+        <div className="analytics-grid two-column">
           {/* View Accounts Widget */}
           <div className="analytics-widget accounts-widget">
             <div className="widget-header">
@@ -281,12 +304,7 @@ function FinancialOverview() {
               )}
             </div>
           </div>
-        </div>
-      </div>
 
-      <div className="transactions-section">
-        <div className="analytics-grid">
-          
           {/* View Transactions Widget */}
           <div className="analytics-widget transactions-widget">
             <div className="widget-header">
@@ -381,22 +399,121 @@ function FinancialOverview() {
               )}
             </div>
           </div>
-
         </div>
       </div>
 
       <div className="ai-analytics-section">
-        <h3>AI Analytics and Insights</h3>
-        <div className="ai-recommendations-widget">
-          <div className="recommendations-content">
+        <div className="ai-analytics-header">
+          <div>
+            <h3>AI Analytics and Insights</h3>
+            <p>Personalized guidance generated from your synced data</p>
+          </div>
+          <div className="ai-analytics-meta">
+            {insightLoading && <span>Updating insights…</span>}
+            {!insightLoading && insight?.generatedAt && (
+              <span>Last updated {formatGeneratedTime(insight.generatedAt)}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="ai-insight-card">
+          {insightLoading ? (
+            <div className="insight-loading">
+              <div className="loading-spinner"></div>
+              <span>Compiling your latest insights…</span>
+            </div>
+          ) : insightError ? (
+            <div className="insight-error">
+              <p>{insightError}</p>
+              <button className="retry-btn" onClick={fetchInsight}>
+                Try Again
+              </button>
+            </div>
+          ) : !insight ? (
             <div className="no-data-message">
               <p>No financial data available for analysis. Connect your accounts to get personalized AI insights and recommendations.</p>
             </div>
-          </div>
+          ) : (
+            <div className="insight-content">
+              <div className="insight-summary">
+                <h4>{insight.summary?.headline}</h4>
+                <p>{insight.summary?.narrative}</p>
+              </div>
+
+              {Array.isArray(insight.keyMetrics) && insight.keyMetrics.length > 0 && (
+                <div className="insight-metrics">
+                  {insight.keyMetrics.map((metric, index) => (
+                    <div key={`${metric.label}-${index}`} className="insight-metric">
+                      <span className="metric-label">{metric.label}</span>
+                      <span className="metric-value">{formatMetricValue(metric)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {Array.isArray(insight.highlights) && insight.highlights.length > 0 && (
+                <div className="insight-highlights">
+                  <h5>Highlights</h5>
+                  <ul>
+                    {insight.highlights.map((item, index) => (
+                      <li key={`highlight-${index}`}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {Array.isArray(insight.recommendations) && insight.recommendations.length > 0 && (
+                <div className="insight-recommendations">
+                  <h5>Recommendations</h5>
+                  <div className="recommendation-list">
+                    {insight.recommendations.map((rec, index) => (
+                      <div key={`rec-${index}`} className="recommendation-item">
+                        <div className="recommendation-title">{rec.title}</div>
+                        <div className="recommendation-detail">{rec.detail}</div>
+                        <div className="recommendation-meta">
+                          {rec.impact && <span className="badge">Impact: {rec.impact}</span>}
+                          {rec.action && <span className="badge">Action: {rec.action}</span>}
+                          {rec.category && <span className="badge muted">{rec.category}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(insight.alerts) && insight.alerts.length > 0 && (
+                <div className="insight-alerts">
+                  <h5>Alerts</h5>
+                  <ul>
+                    {insight.alerts.map((alert, index) => (
+                      <li key={`alert-${index}`}>{alert}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(insight.context?.periodDays || insight.context?.transactionCount >= 0) && (
+                <div className="insight-footer">
+                  {insight.context?.periodDays && (
+                    <span>Analysis window: last {insight.context.periodDays} days</span>
+                  )}
+                  {insight.context?.transactionCount >= 0 && (
+                    <span>
+                      Transactions analyzed: {insight.context.transactionCount}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+FinancialOverview.propTypes = {
+  refreshKey: PropTypes.number,
+};
 
 export default FinancialOverview;

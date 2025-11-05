@@ -9,6 +9,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .loading {
@@ -25,19 +27,42 @@
   flex: 1;
   background: #ffffff;
   min-height: 0;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .auth-left {
   flex: 1;
-  background: #000000;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 60px;
+  padding: 24px;
   color: white;
   position: relative;
   overflow: hidden;
+  animation: slideInLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .auth-left::before {
@@ -47,15 +72,49 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.05"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.03"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.03"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-  opacity: 0.3;
+  background: radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  opacity: 0.5;
+}
+
+.auth-left::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 100%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  animation: pulse 8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .auth-left-content {
   position: relative;
   z-index: 1;
   text-align: center;
-  max-width: 500px;
+  max-width: 550px;
+  width: 100%;
+  padding: 0;
+  animation: fadeInUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-right {
@@ -63,149 +122,267 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px;
+  padding: 20px;
   background: #ffffff;
   border-left: 1px solid #e5e7eb;
+  overflow-y: auto;
+  min-height: 0;
+  animation: slideInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  padding: 48px;
+  border-radius: 16px;
+  border: none;
+  padding: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+  animation: fadeInScale 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.auth-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .auth-left-title {
-  font-size: 48px;
-  font-weight: 300;
-  margin-bottom: 24px;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 12px;
   line-height: 1.1;
   letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .auth-left-subtitle {
-  font-size: 18px;
-  opacity: 0.7;
-  margin-bottom: 40px;
-  line-height: 1.6;
-  font-weight: 300;
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 24px;
+  line-height: 1.4;
+  font-weight: 400;
+  color: #e5e5e5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .auth-left-features {
   text-align: left;
-  margin-top: 40px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
 }
 
 .auth-left-feature {
   display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-  font-size: 14px;
-  opacity: 0.8;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  font-size: 13px;
+  opacity: 0.85;
+  line-height: 1.4;
+  color: #f5f5f5;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
-.auth-left-feature-icon {
-  width: 20px;
-  height: 20px;
+.auth-left-feature:nth-child(1) {
+  animation-delay: 0.6s;
+}
+
+.auth-left-feature:nth-child(2) {
+  animation-delay: 0.7s;
+}
+
+.auth-left-feature:nth-child(3) {
+  animation-delay: 0.8s;
+}
+
+.auth-feature-bullet {
   margin-right: 12px;
-  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 8px;
+  line-height: 20px;
+  flex-shrink: 0;
+  font-weight: 600;
+  width: 6px;
+  height: 6px;
+  background: #ffffff;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 7px;
 }
 
 .auth-header {
-  text-align: left;
-  margin-bottom: 32px;
+  text-align: center;
+  margin-bottom: 12px;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .auth-title {
-  font-size: 28px;
-  font-weight: 300;
-  color: #000000;
-  margin-bottom: 8px;
-  letter-spacing: -0.01em;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 3px;
+  letter-spacing: -0.015em;
 }
 
 .auth-subtitle {
   color: #6b7280;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.3;
   font-weight: 400;
 }
 
 .form-section {
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 
 .form-actions {
-  margin-top: 32px;
+  margin-top: 12px;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.65s both;
 }
 
 .form-actions .btn {
   width: 100%;
-  padding: 12px 24px;
+  padding: 9px 24px;
   font-size: 14px;
-  font-weight: 500;
-  border-radius: 6px;
+  font-weight: 600;
+  border-radius: 10px;
   transition: all 0.2s ease;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.form-actions .btn:hover:not(:disabled) {
+  background: #1f2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.form-actions .btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.form-actions .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .auth-footer {
   text-align: center;
-  margin-top: 32px;
+  margin-top: 10px;
   color: #6b7280;
-  font-size: 13px;
+  font-size: 12px;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.8s both;
 }
 
 .auth-link {
   color: #000000;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   transition: color 0.2s ease;
-  border-bottom: 1px solid transparent;
+  border-bottom: 2px solid transparent;
 }
 
-.auth-link:hover {
-  color: #374151;
-  border-bottom-color: #000000;
+/* Login page specific adjustments */
+.auth-container.login-page .auth-card {
+  padding: 28px;
+}
+
+.auth-container.login-page .auth-title {
+  font-size: 26px;
+}
+
+.auth-container.login-page .form-group {
+  margin-bottom: 16px;
+}
+
+.auth-container.login-page .form-actions {
+  margin-top: 22px;
+}
+
+.auth-container.login-page .auth-header {
+  margin-bottom: 24px;
+}
+
+.auth-container.login-page .auth-footer {
+  margin-top: 20px;
+}
+
+.auth-container.login-page .divider {
+  margin: 20px 0;
+}
+
+.auth-container.login-page .oauth-buttons {
+  margin-top: 18px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .auth-container {
     flex-direction: column;
+    overflow: hidden;
   }
   
   .auth-left {
-    padding: 40px 20px;
-    min-height: 40vh;
+    padding: 24px 20px;
+    min-height: auto;
+    flex-shrink: 0;
   }
   
   .auth-left-title {
-    font-size: 36px;
+    font-size: 32px;
+    margin-bottom: 12px;
   }
   
   .auth-left-subtitle {
-    font-size: 18px;
-  }
-  
-  .auth-right {
-    padding: 40px 20px;
-  }
-  
-  .auth-card {
-    padding: 32px;
-    max-width: 100%;
+    font-size: 14px;
+    margin-bottom: 16px;
   }
   
   .auth-left-features {
     display: none;
+  }
+  
+  .auth-right {
+    padding: 24px 20px;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  
+  .auth-card {
+    padding: 28px;
+    max-width: 100%;
   }
 }
 
@@ -221,17 +398,159 @@
 
 .dashboard-container {
   background: #ffffff;
-  padding: 40px;
+  padding: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
 }
 
 .container {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.integrated-dashboard {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
+  width: 100%;
+}
+
+.dashboard-sidebar {
+  width: 260px;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 0;
+  flex-shrink: 0;
+  position: fixed;
+  left: 0;
+  top: 72px;
+  bottom: 72px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 12px;
+}
+
+.dashboard-tabs .tab-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(0);
+}
+
+.dashboard-tabs .tab-btn:hover {
+  color: #000000;
+  background: #f3f4f6;
+  transform: translateX(4px);
+}
+
+.dashboard-tabs .tab-btn.active {
+  color: #000000;
+  background: #f9fafb;
+  font-weight: 600;
+  transform: translateX(0);
+}
+
+.dashboard-tabs .tab-btn.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 24px;
+  background: #000000;
+  border-radius: 0 2px 2px 0;
+  animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInLeft {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 3px;
+    opacity: 1;
+  }
+}
+
+.dashboard-tabs .tab-btn.connect-bank-btn {
+  margin-top: 0;
+  padding-top: 10px;
+}
+
+.dashboard-tabs .tab-btn.connect-bank-btn:hover {
+  background: #f3f4f6;
+  transform: translateX(4px);
+}
+
+.dashboard-tabs .tab-btn.connect-bank-btn.active {
+  background: #f9fafb;
+  transform: translateX(0);
+}
+
+.tab-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 16px;
+  margin-left: 260px;
+  width: calc(100% - 260px);
+}
+
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+.add-bank-modal {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  height: 100%;
+  overflow: hidden;
 }
 
 .dashboard-header {
@@ -407,59 +726,6 @@
   margin: 0;
 }
 
-.dashboard-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 32px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.dashboard-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.tab-btn:hover {
-  color: #000000;
-  background: #f9fafb;
-}
-
-.tab-btn.active {
-  color: #000000;
-  border-bottom-color: #000000;
-  font-weight: 600;
-}
-
-.tab-btn.active::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 2px;
-  background: #000000;
-  border-radius: 1px;
-}
 
 .tab-content {
   flex: 1;
@@ -471,54 +737,65 @@
 /* Dashboard Responsive Design */
 @media (max-width: 768px) {
   .dashboard-container {
-    padding: 20px;
+    padding: 0;
   }
   
-  .dashboard-header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+  .integrated-dashboard {
+    flex-direction: column;
   }
   
-  .dashboard-title {
-    font-size: 24px;
-  }
-  
-  .dashboard-tabs {
-    margin-bottom: 24px;
-    gap: 4px;
-  }
-  
-  .tab-btn {
-    padding: 10px 16px;
-    font-size: 13px;
-  }
-  
-  .tab-content {
-    min-height: 400px;
-  }
-  
-  .integration-status {
-    padding: 12px 16px;
-    margin-bottom: 24px;
-  }
-  
-  .integration-status p {
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard-container {
-    padding: 16px;
+  .dashboard-sidebar {
+    position: relative;
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 0;
+    height: auto;
+    background: #ffffff;
   }
   
   .dashboard-tabs {
+    flex-direction: row;
     overflow-x: auto;
-    padding-bottom: 8px;
+    padding: 0 16px;
+    gap: 8px;
   }
   
-  .tab-btn {
-    padding: 8px 12px;
-    font-size: 12px;
+  .dashboard-tabs .tab-btn {
+    border-left: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 10px 16px;
+  }
+  
+  .dashboard-tabs .tab-btn::before {
+    display: none;
+  }
+  
+  .dashboard-tabs .tab-btn:hover {
+    transform: none;
+  }
+  
+  .dashboard-tabs .tab-btn.active {
+    border-left: none;
+    border-bottom-color: #000000;
+    box-shadow: none;
+  }
+  
+  .dashboard-tabs .tab-btn.connect-bank-btn {
+    margin-top: 0;
+    padding-top: 10px;
+    border-top: none;
+    border-left: none;
+  }
+  
+  .tab-content-wrapper {
+    margin-left: 0;
+    width: 100%;
+    padding: 20px;
   }
 }

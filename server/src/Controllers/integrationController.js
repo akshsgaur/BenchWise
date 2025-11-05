@@ -1,5 +1,7 @@
 const Integration = require('../Models/Integration');
 const { Configuration, PlaidApi, PlaidEnvironments } = require('plaid');
+const transactionSyncService = require('../Services/transactionSyncService');
+const insightGenerationService = require('../Services/insightGenerationService');
 
 // Initialize Plaid client
 const configuration = new Configuration({
@@ -13,6 +15,49 @@ const configuration = new Configuration({
 });
 
 const plaidClient = new PlaidApi(configuration);
+
+const finalizeIntegration = async (user, bankConnectionData, res) => {
+  // Fetch fresh integration with populated user for downstream services
+  const populatedIntegration = await Integration.findOne({ userId: user._id }).populate('userId');
+
+  if (!populatedIntegration) {
+    throw new Error('Failed to reload integration after saving');
+  }
+
+  // Immediately sync this user's transactions so data is available right away
+  try {
+    console.log(`Triggering immediate transaction sync for user ${user._id}`);
+    await transactionSyncService.syncUserTransactions(populatedIntegration);
+    console.log(`Transaction sync completed for user ${user._id}`);
+  } catch (syncError) {
+    console.error('Immediate transaction sync failed:', syncError);
+    return res.status(500).json({
+      message: 'Bank connected but failed to sync transactions. Please try again.',
+      error: syncError.message
+    });
+  }
+
+  // Generate insights for the user (non-blocking failure)
+  let insightGenerated = false;
+  try {
+    console.log(`Triggering immediate insight generation for user ${user._id}`);
+    await insightGenerationService.runForUser(String(populatedIntegration.userId._id));
+    insightGenerated = true;
+  } catch (insightError) {
+    console.error('Immediate insight generation failed:', insightError);
+  }
+
+  return res.json({
+    message: 'Bank account successfully integrated',
+    integration: {
+      isIntegrated: populatedIntegration.plaid.isIntegrated,
+      institutionName: bankConnectionData.institutionName,
+      bankConnectionsCount: populatedIntegration.plaid.bankConnections.length,
+      accountsCount: bankConnectionData.accounts.length
+    },
+    insightGenerated
+  });
+};
 
 // Get user's accounts
 const getAccounts = async (req, res) => {
@@ -150,15 +195,7 @@ const manageBankIntegration = async (req, res) => {
 
     console.log('Integration updated successfully:', JSON.stringify(integration, null, 2));
 
-    res.json({
-      message: 'Bank account successfully integrated',
-      integration: {
-        isIntegrated: integration.plaid.isIntegrated,
-        institutionName: bankConnectionData.institutionName,
-        bankConnectionsCount: integration.plaid.bankConnections.length,
-        accountsCount: bankConnectionData.accounts.length
-      }
-    });
+    return finalizeIntegration(user, bankConnectionData, res);
   } catch (error) {
     console.error('Error managing bank integration:', error);
     res.status(500).json({
@@ -309,15 +346,7 @@ const exchangeTokenAndManageIntegration = async (req, res) => {
 
     console.log('Integration updated successfully:', JSON.stringify(integration, null, 2));
 
-    res.json({
-      message: 'Bank account successfully integrated',
-      integration: {
-        isIntegrated: integration.plaid.isIntegrated,
-        institutionName: bankConnectionData.institutionName,
-        bankConnectionsCount: integration.plaid.bankConnections.length,
-        accountsCount: accounts.length
-      }
-    });
+    return finalizeIntegration(user, bankConnectionData, res);
 
   } catch (error) {
     console.error('Error in complete token exchange:', error);

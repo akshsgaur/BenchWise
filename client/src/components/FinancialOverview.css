@@ -5,7 +5,7 @@
   flex-direction: column;
   background: linear-gradient(to bottom, #fafafa 0%, #ffffff 100%);
   padding: 24px;
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
@@ -70,7 +70,7 @@
 .overview-header {
   text-align: center;
   margin-bottom: 32px;
-  animation: slideDown 0.5s ease-out;
+  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
 }
 
 @keyframes slideDown {
@@ -114,7 +114,7 @@
   align-items: center;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideUp 0.5s ease-out 0.1s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 @keyframes slideUp {
@@ -194,6 +194,7 @@
 
 .accounts-section {
   margin-bottom: 16px;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
 }
 
 .accounts-section h3 {
@@ -468,6 +469,10 @@
   border-color: #d1d5db;
 }
 
+.transactions-section {
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
 .transactions-section h3 {
   font-size: 16px;
   font-weight: 300;
@@ -521,7 +526,7 @@
   max-height: 500px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideUp 0.5s ease-out 0.4s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .ai-insight-card:hover {
@@ -717,7 +722,27 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.05);
-  animation: slideUp 0.5s ease-out 0.3s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+.analytics-widget:nth-child(1) {
+  animation-delay: 0.3s;
+}
+
+.analytics-widget:nth-child(2) {
+  animation-delay: 0.35s;
+}
+
+.analytics-widget:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.analytics-widget:nth-child(4) {
+  animation-delay: 0.45s;
+}
+
+.analytics-widget:nth-child(n+5) {
+  animation-delay: 0.5s;
 }
 
 .analytics-widget:hover {

@@ -28,6 +28,16 @@
   background: #ffffff;
   min-height: 0;
   overflow: hidden;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .auth-left {
@@ -41,6 +51,18 @@
   color: white;
   position: relative;
   overflow: hidden;
+  animation: slideInLeft 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .auth-left::before {
@@ -81,6 +103,18 @@
   max-width: 550px;
   width: 100%;
   padding: 0;
+  animation: fadeInUp 0.7s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-right {
@@ -93,6 +127,18 @@
   border-left: 1px solid #e5e7eb;
   overflow-y: auto;
   min-height: 0;
+  animation: slideInRight 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .auth-card {
@@ -104,6 +150,18 @@
   padding: 18px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
   transition: box-shadow 0.3s ease;
+  animation: fadeInScale 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .auth-card:hover {
@@ -120,6 +178,7 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .auth-left-subtitle {
@@ -132,6 +191,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .auth-left-features {
@@ -139,6 +199,7 @@
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s both;
 }
 
 .auth-left-feature {
@@ -149,6 +210,19 @@
   opacity: 0.85;
   line-height: 1.4;
   color: #f5f5f5;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.auth-left-feature:nth-child(1) {
+  animation-delay: 0.6s;
+}
+
+.auth-left-feature:nth-child(2) {
+  animation-delay: 0.7s;
+}
+
+.auth-left-feature:nth-child(3) {
+  animation-delay: 0.8s;
 }
 
 .auth-feature-bullet {
@@ -168,6 +242,7 @@
 .auth-header {
   text-align: center;
   margin-bottom: 12px;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .auth-title {
@@ -191,6 +266,7 @@
 
 .form-actions {
   margin-top: 12px;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.65s both;
 }
 
 .form-actions .btn {
@@ -226,6 +302,7 @@
   margin-top: 10px;
   color: #6b7280;
   font-size: 12px;
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.8s both;
 }
 
 .auth-link {

@@ -7,7 +7,7 @@
   min-height: auto;
   max-height: calc(100vh - 72px - 72px);
   overflow: hidden;
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes fadeIn {
@@ -69,7 +69,7 @@
 .plaid-header {
   margin-bottom: 20px;
   text-align: left;
-  animation: slideDown 0.5s ease-out;
+  animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
 }
 
 @keyframes slideDown {
@@ -156,27 +156,27 @@
 }
 
 .plaid-benefit:nth-child(1) {
-  animation: slideUp 0.5s ease-out 0.1s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.2s both;
 }
 
 .plaid-benefit:nth-child(2) {
-  animation: slideUp 0.5s ease-out 0.15s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
 }
 
 .plaid-benefit:nth-child(3) {
-  animation: slideUp 0.5s ease-out 0.2s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .plaid-benefit:nth-child(4) {
-  animation: slideUp 0.5s ease-out 0.25s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.35s both;
 }
 
 .plaid-benefit:nth-child(5) {
-  animation: slideUp 0.5s ease-out 0.3s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
 }
 
 .plaid-benefit:nth-child(n+6) {
-  animation: slideUp 0.5s ease-out 0.35s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.45s both;
 }
 
 @keyframes slideUp {
@@ -233,7 +233,7 @@
   width: 100%;
   text-align: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: slideUp 0.5s ease-out 0.2s both;
+  animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
 }
 
 .plaid-connect-card:hover {

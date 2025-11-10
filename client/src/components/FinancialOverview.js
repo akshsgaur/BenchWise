@@ -244,7 +244,7 @@ function FinancialOverview({ refreshKey = 0 }) {
       </div>
 
       <div className="accounts-transactions-section">
-        <div className="analytics-grid two-column">
+        <div className="analytics-grid">
           {/* View Accounts Widget */}
           <div className="analytics-widget accounts-widget">
             <div className="widget-header">

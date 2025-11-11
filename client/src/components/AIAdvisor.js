@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { aiAdvisorAPI } from '../services/api';
 import './AIAdvisor.css';
 
@@ -7,6 +8,7 @@ function AIAdvisor() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Scroll to bottom when new messages arrive
@@ -18,21 +20,57 @@ function AIAdvisor() {
     scrollToBottom();
   }, [messages]);
 
-  // Initial welcome message
+  // Load chat history and set initial welcome message
   useEffect(() => {
-    setMessages([{
-      id: 1,
-      type: 'assistant',
-      content: "Hi! I'm your AI Financial Advisor. I can help you understand your spending, subscriptions, savings rate, debt-to-income ratio, and financial goals. What would you like to know about your finances?",
-      timestamp: new Date(),
-      suggestedQuestions: [
-        "How much am I spending on subscriptions?",
-        "What's my debt-to-income ratio?",
-        "Can I save $10,000 in a year?",
-        "What are my biggest spending categories?",
-        "Show me my recurring charges"
-      ]
-    }]);
+    const loadChatHistory = async () => {
+      try {
+        const response = await aiAdvisorAPI.getChatHistory();
+        if (response.data.success && response.data.data.history.length > 0) {
+          // Convert database messages to component format
+          const historyMessages = response.data.data.history.map(msg => ({
+            id: msg.id,
+            type: msg.type,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            metadata: msg.metadata || {}
+          }));
+          setMessages(historyMessages);
+        } else {
+          // No history - show welcome message
+          setMessages([{
+            id: 1,
+            type: 'assistant',
+            content: "Hi! I'm your AI Financial Advisor. I can help you understand your spending, subscriptions, savings rate, debt-to-income ratio, and financial goals. What would you like to know about your finances?",
+            timestamp: new Date(),
+            suggestedQuestions: [
+              "How much am I spending on subscriptions?",
+              "What's my debt-to-income ratio?",
+              "Can I save $10,000 in a year?",
+              "What are my biggest spending categories?",
+              "Show me my recurring charges"
+            ]
+          }]);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        // Show welcome message on error
+        setMessages([{
+          id: 1,
+          type: 'assistant',
+          content: "Hi! I'm your AI Financial Advisor. I can help you understand your spending, subscriptions, savings rate, debt-to-income ratio, and financial goals. What would you like to know about your finances?",
+          timestamp: new Date(),
+          suggestedQuestions: [
+            "How much am I spending on subscriptions?",
+            "What's my debt-to-income ratio?",
+            "Can I save $10,000 in a year?",
+            "What are my biggest spending categories?",
+            "Show me my recurring charges"
+          ]
+        }]);
+      }
+    };
+
+    loadChatHistory();
   }, []);
 
   const handleSendMessage = async () => {
@@ -56,9 +94,12 @@ function AIAdvisor() {
       console.log('AI Advisor Response:', response.data);
 
       if (response.data.success) {
-        const agentResponse = response.data.data.agent_response;
+        const responseData = response.data.data;
+        const agentResponse = responseData.agent_response;
+        const responseType = responseData.response_type || (typeof agentResponse === 'object' ? 'structured' : 'plain');
 
         console.log('Agent Response:', agentResponse);
+        console.log('Response Type:', responseType);
 
         const assistantMessage = {
           id: messages.length + 2,
@@ -66,8 +107,9 @@ function AIAdvisor() {
           content: agentResponse,
           timestamp: new Date(),
           metadata: {
-            toolsUsed: agentResponse.tools_used || [],
-            iterations: agentResponse.iterations || 0
+            toolsUsed: responseData.tools_used || [],
+            iterations: agentResponse?.iterations || 0,
+            responseType: responseType
           }
         };
 
@@ -103,14 +145,65 @@ function AIAdvisor() {
     setInputMessage(question);
   };
 
-  const renderMessageContent = (message) => {
-    if (message.type === 'assistant' && message.content && typeof message.content === 'object') {
-      const { summary, analysis, recommendations, tools_used } = message.content;
+  const handleClearChat = async () => {
+    // Show confirmation modal
+    setShowClearConfirm(true);
+  };
 
-      // If no summary and it's a plain text response, render as text
-      if (!summary && !analysis && !recommendations && typeof message.content === 'string') {
-        return <p>{message.content}</p>;
+  const confirmClearChat = async () => {
+    setShowClearConfirm(false);
+    
+    try {
+      setIsLoading(true);
+      const response = await aiAdvisorAPI.deleteAllMessages();
+      
+      if (response.data.success) {
+        // Reset to welcome message
+        setMessages([{
+          id: 1,
+          type: 'assistant',
+          content: "Hi! I'm your AI Financial Advisor. I can help you understand your spending, subscriptions, savings rate, debt-to-income ratio, and financial goals. What would you like to know about your finances?",
+          timestamp: new Date(),
+          suggestedQuestions: [
+            "How much am I spending on subscriptions?",
+            "What's my debt-to-income ratio?",
+            "Can I save $10,000 in a year?",
+            "What are my biggest spending categories?",
+            "Show me my recurring charges"
+          ]
+        }]);
+        setError('');
+      } else {
+        throw new Error(response.data.message || 'Failed to clear chat');
       }
+    } catch (err) {
+      console.error('Error clearing chat:', err);
+      setError(err.response?.data?.message || 'Failed to clear chat. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const cancelClearChat = () => {
+    setShowClearConfirm(false);
+  };
+
+  const renderMessageContent = (message) => {
+    // Check if this is a structured response (has response_type metadata or is an object with specific keys)
+    const isStructured = message.metadata?.responseType === 'structured' || 
+                         (message.type === 'assistant' && 
+                          message.content && 
+                          typeof message.content === 'object' && 
+                          (message.content.summary || message.content.analysis || message.content.recommendations));
+
+    // If it's a plain text response (string or not structured), render as simple text
+    if (!isStructured && typeof message.content === 'string') {
+      return <p>{message.content}</p>;
+    }
+
+    // Handle structured responses
+    if (isStructured && message.content && typeof message.content === 'object') {
+      const { summary, analysis, recommendations, tools_used } = message.content;
 
       return (
         <div className="agent-response">
@@ -178,30 +271,85 @@ function AIAdvisor() {
       );
     }
 
-    // Handle string content or fallback
-    if (typeof message.content === 'string') {
-      return <p>{message.content}</p>;
+    // Fallback: render as plain text if content exists
+    if (message.content) {
+      if (typeof message.content === 'string') {
+        return <p>{message.content}</p>;
+      }
+      // If it's an object but not structured, try to extract text
+      if (typeof message.content === 'object' && message.content.summary) {
+        return <p>{message.content.summary}</p>;
+      }
     }
 
-    // Debug: show what we received
-    return (
-      <div>
-        <p>Received response (check console for details)</p>
-        <pre style={{ fontSize: '10px', background: '#f5f5f5', padding: '8px', borderRadius: '4px', overflow: 'auto', maxHeight: '200px' }}>
-          {JSON.stringify(message.content, null, 2)}
-        </pre>
-      </div>
-    );
+    // Last resort: show error message
+    return <p>Unable to display message content.</p>;
   };
 
   return (
-    <div className="ai-advisor-container">
-      <div className="chat-header">
-        <h2>AI Financial Advisor</h2>
-        <p className="chat-subtitle">Ask me anything about your finances</p>
-      </div>
+    <>
+      {/* Confirmation Modal - Rendered via Portal to avoid clipping */}
+      {showClearConfirm && createPortal(
+        <div className="confirm-modal-overlay" onClick={cancelClearChat}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-header">
+              <div className="confirm-modal-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </div>
+              <h3>Clear Chat History?</h3>
+            </div>
+            <div className="confirm-modal-body">
+              <p>Are you sure you want to clear all chat messages? This action cannot be undone.</p>
+            </div>
+            <div className="confirm-modal-footer">
+              <button
+                className="confirm-modal-btn cancel-btn"
+                onClick={cancelClearChat}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                className="confirm-modal-btn confirm-btn"
+                onClick={confirmClearChat}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Clearing...' : 'Clear Chat'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
-      <div className="chat-messages">
+      <div className="ai-advisor-container">
+        <div className="chat-header-content">
+          <div>
+            <h2>AI Financial Advisor</h2>
+            <p className="chat-subtitle">Ask me anything about your finances</p>
+          </div>
+          {messages.length > 1 && (
+            <button
+              className="clear-chat-button"
+              onClick={handleClearChat}
+              disabled={isLoading}
+              title="Clear chat history"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Clear Chat
+            </button>
+          )}
+        </div>
+
+        <div className="chat-messages">
         {messages.map((message) => (
           <div key={message.id} className={`message ${message.type}`}>
             <div className="message-avatar">
@@ -240,7 +388,9 @@ function AIAdvisor() {
               )}
 
               <span className="message-time">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {message.timestamp instanceof Date 
+                  ? message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           </div>
@@ -294,6 +444,7 @@ function AIAdvisor() {
         </button>
       </div>
     </div>
+    </>
   );
 }
 

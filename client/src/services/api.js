@@ -80,6 +80,7 @@ export const insightsAPI = {
 export const aiAdvisorAPI = {
   askQuestion: (question) => api.post('/v1/ai-advisor/query', { question }),
   getChatHistory: () => api.get('/v1/ai-advisor/history'),
+  deleteAllMessages: () => api.delete('/v1/ai-advisor/messages'),
 };
 
 export default api;

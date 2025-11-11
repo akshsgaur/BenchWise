@@ -338,38 +338,51 @@ Guidelines:
                 }
             )
 
-            # No more tools to call - generate final structured answer
+            # No more tools to call - generate final answer
             if not response_message.tool_calls:
                 print(f"[INFO] No more tool calls, generating final response for user {user_id}")
-                final_response = self.openai_client.chat.completions.create(
-                    model=self.model_name,
-                    messages=messages
-                    + [
-                        {
-                            "role": "user",
-                            "content": "Provide a structured response with summary, key metrics, insights, and recommendations.",
-                        }
-                    ],
-                    response_format=self._response_schema(),
-                    temperature=0.3,
-                )
+                
+                # Only use structured format if tools were actually used
+                # For simple conversational questions, return plain text
+                if len(tools_used) > 0:
+                    print(f"[INFO] Tools were used ({len(tools_used)}), generating structured response")
+                    final_response = self.openai_client.chat.completions.create(
+                        model=self.model_name,
+                        messages=messages
+                        + [
+                            {
+                                "role": "user",
+                                "content": "Provide a structured response with summary, key metrics, insights, and recommendations.",
+                            }
+                        ],
+                        response_format=self._response_schema(),
+                        temperature=0.3,
+                    )
 
-                try:
-                    structured_answer = json.loads(final_response.choices[0].message.content)
-                    structured_answer["tools_used"] = tools_used
-                    structured_answer["iterations"] = iteration + 1
-                    return {"answer": structured_answer, "query": question, "tools_used": len(tools_used)}
-                except json.JSONDecodeError:
-                    # Fallback to plain text response
+                    try:
+                        structured_answer = json.loads(final_response.choices[0].message.content)
+                        structured_answer["tools_used"] = tools_used
+                        structured_answer["iterations"] = iteration + 1
+                        structured_answer["response_type"] = "structured"
+                        return {"answer": structured_answer, "query": question, "tools_used": len(tools_used), "response_type": "structured"}
+                    except json.JSONDecodeError:
+                        # Fallback to plain text response
+                        plain_text = response_message.content or "Analysis complete"
+                        return {
+                            "answer": plain_text,
+                            "query": question,
+                            "tools_used": len(tools_used),
+                            "response_type": "plain"
+                        }
+                else:
+                    # No tools used - return plain conversational response
+                    print(f"[INFO] No tools used, returning plain text response")
+                    plain_text = response_message.content or "I'm here to help with your financial questions!"
                     return {
-                        "answer": {
-                            "summary": response_message.content or "Analysis complete",
-                            "analysis": {"key_metrics": [], "insights": []},
-                            "recommendations": [],
-                            "tools_used": tools_used,
-                        },
+                        "answer": plain_text,
                         "query": question,
-                        "iterations": iteration + 1,
+                        "tools_used": 0,
+                        "response_type": "plain"
                     }
 
             # Execute tool calls
@@ -417,14 +430,10 @@ Guidelines:
 
         # Max iterations reached
         return {
-            "answer": {
-                "summary": "Analysis incomplete",
-                "analysis": {"key_metrics": [], "insights": ["Reached maximum analysis depth"]},
-                "recommendations": [],
-                "tools_used": tools_used,
-            },
+            "answer": "I've reached the maximum analysis depth. Please try rephrasing your question or breaking it into smaller parts.",
             "query": question,
-            "iterations": max_iterations,
+            "tools_used": len(tools_used),
+            "response_type": "plain"
         }
 
     @staticmethod
@@ -507,13 +516,14 @@ def chat_query(request: ChatRequest):
             conversation_history=request.conversation_history,
         )
 
-        print(f"[INFO] Chat query completed - User ID: {request.user_id}, Tools used: {result.get('tools_used', 0)}")
+        print(f"[INFO] Chat query completed - User ID: {request.user_id}, Tools used: {result.get('tools_used', 0)}, Response type: {result.get('response_type', 'unknown')}")
         return {
             "success": True,
             "data": {
                 "agent_response": result["answer"],
                 "query": result["query"],
                 "tools_used": result.get("tools_used", 0),
+                "response_type": result.get("response_type", "plain"),
             },
         }
 

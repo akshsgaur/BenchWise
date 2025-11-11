@@ -536,7 +536,9 @@ def chat_query(request: ChatRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    print("[INFO] Starting BenchWise AI Chatbot service on port 8001")
+    # Use PORT from environment (Render provides this) or default to 8001
+    port = int(os.getenv("PORT", 8001))
+    print("[INFO] Starting BenchWise AI Chatbot service on port", port)
     print(f"[INFO] MongoDB URI: {os.getenv('MONGODB_URI', 'Not set')[:50]}...")
     print(f"[INFO] OpenAI Model: {os.getenv('DEPLOYMENT_NAME') or os.getenv('OPENAI_MODEL', 'Not set')}")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=port)

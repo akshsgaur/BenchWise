@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { plaidAPI } from '../services/api';
 import PlaidIntegration from './PlaidIntegration';
 import FinancialOverview from './FinancialOverview';
@@ -53,11 +52,9 @@ const ConnectBankIcon = () => (
 );
 
 function Dashboard() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [integrationStatus, setIntegrationStatus] = useState(null);
+  const [hasBankAccounts, setHasBankAccounts] = useState(false);
   const [loading, setLoading] = useState(true);
   const [integrationRefreshKey, setIntegrationRefreshKey] = useState(Date.now());
   const [showAddBank, setShowAddBank] = useState(false);
@@ -72,11 +69,11 @@ function Dashboard() {
   }, []);
 
   useEffect(() => {
-    if (!loading && integrationStatus?.isIntegrated) {
-      // Trigger sidebar animation after a brief delay
+    if (!loading) {
+      // Trigger sidebar animation after a brief delay - always show sidebar now
       setTimeout(() => setIsMounted(true), 100);
     }
-  }, [loading, integrationStatus]);
+  }, [loading]);
 
   // Set default tab in URL if none exists (only on initial load)
   useEffect(() => {
@@ -97,30 +94,30 @@ function Dashboard() {
       setLoading(true);
       const response = await plaidAPI.getIntegrationStatus();
       console.log('Integration status response:', response.data);
-      setIntegrationStatus(response.data);
-      if (response.data?.isIntegrated) {
-        setIntegrationRefreshKey(Date.now());
+      
+      // Check if user has bank accounts connected by fetching accounts
+      try {
+        const accountsResponse = await plaidAPI.getAccounts();
+        const accounts = accountsResponse.data?.accounts || [];
+        setHasBankAccounts(accounts.length > 0);
+      } catch (accountsError) {
+        // If accounts can't be fetched, assume no accounts
+        console.error('Error fetching accounts:', accountsError);
+        setHasBankAccounts(false);
       }
     } catch (error) {
       console.error('Error checking integration status:', error);
       // If there's an error (like 404 for no integration), treat as not integrated
-      setIntegrationStatus({ isIntegrated: false, hasPlaid: false });
+      setHasBankAccounts(false);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleIntegrationComplete = (integration) => {
-    setIntegrationStatus({
-      isIntegrated: true,
-      hasPlaid: true,
-      ...integration
-    });
-    setIntegrationRefreshKey(Date.now());
-  };
-
   const handleBankConnectionComplete = () => {
     setSearchParams({ tab: 'overview' });
+    // Refresh to check for bank accounts
+    checkIntegrationStatus();
   };
 
   const handleTabChange = (tab) => {
@@ -140,10 +137,6 @@ function Dashboard() {
     }, 150);
   };
 
-  const handleLogout = () => {
-    logout();
-  };
-
   if (loading) {
     return (
       <div className="dashboard-container">
@@ -157,62 +150,65 @@ function Dashboard() {
 
   return (
     <div className="dashboard-container">
-      {!integrationStatus?.isIntegrated ? (
-        <div className="container">
-          <PlaidIntegration onIntegrationComplete={handleIntegrationComplete} />
-        </div>
-      ) : (
-        <div className={`integrated-dashboard ${isMounted ? 'mounted' : ''}`}>
-          <div className={`dashboard-sidebar ${isMounted ? 'mounted' : ''}`}>
-            <div className="dashboard-tabs">
-              <button
-                className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-                onClick={() => handleTabChange('overview')}
-                style={{ animationDelay: isMounted ? '0.1s' : '0s' }}
-              >
-                <FinancialIcon />
-                Financial Overview
-              </button>
-              <button
-                className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
-                onClick={() => handleTabChange('subscriptions')}
-                style={{ animationDelay: isMounted ? '0.15s' : '0s' }}
-              >
-                <SubscriptionIcon />
-                Subscription Overview
-              </button>
-              <button
-                className={`tab-btn ${activeTab === 'ai-advisor' ? 'active' : ''}`}
-                onClick={() => handleTabChange('ai-advisor')}
-                style={{ animationDelay: isMounted ? '0.2s' : '0s' }}
-              >
-                <AIIcon />
-                AI Financial Advisor
-              </button>
-              <button
-                className={`tab-btn connect-bank-btn ${showAddBank ? 'active' : ''}`}
-                onClick={handleConnectBank}
-                style={{ animationDelay: isMounted ? '0.25s' : '0s' }}
-              >
-                <ConnectBankIcon />
-                Connect Another Bank
-              </button>
-              <button
-                className={`tab-btn connect-bank-btn ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => handleTabChange('profile')}
-                style={{ animationDelay: isMounted ? '0.3s' : '0s' }}
-              >
-                <ProfileIcon />
-                Profile Management
-              </button>
-              <button
-                className={`tab-btn connect-bank-btn ${activeTab === 'account' ? 'active' : ''}`}
-                onClick={() => handleTabChange('account')}
-                style={{ animationDelay: isMounted ? '0.35s' : '0s' }}
-              >
-                <AccountIcon />
-                Account Management
-              </button>
+      <div className={`integrated-dashboard ${isMounted ? 'mounted' : ''}`}>
+        <div className={`dashboard-sidebar ${isMounted ? 'mounted' : ''}`}>
+          <div className="dashboard-tabs">
+            <button
+              className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
+              onClick={() => handleTabChange('overview')}
+              style={{ animationDelay: isMounted ? '0.1s' : '0s' }}
+            >
+              <FinancialIcon />
+              Financial Overview
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'subscriptions' ? 'active' : ''}`}
+              onClick={() => handleTabChange('subscriptions')}
+              style={{ animationDelay: isMounted ? '0.15s' : '0s' }}
+            >
+              <SubscriptionIcon />
+              Subscription Overview
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'ai-advisor' ? 'active' : ''}`}
+              onClick={() => handleTabChange('ai-advisor')}
+              style={{ animationDelay: isMounted ? '0.2s' : '0s' }}
+            >
+              <AIIcon />
+              AI Financial Advisor
+            </button>
+            <button
+              className={`tab-btn connect-bank-btn ${showAddBank ? 'active' : ''}`}
+              onClick={handleConnectBank}
+              style={{ animationDelay: isMounted ? '0.25s' : '0s' }}
+            >
+              <ConnectBankIcon />
+              Connect Another Bank
+              {!hasBankAccounts && (
+                <span 
+                  className="tab-warning-indicator" 
+                  title="No bank accounts connected. Click to connect your first bank account."
+                >
+                  !
+                </span>
+              )}
+            </button>
+            <button
+              className={`tab-btn connect-bank-btn ${activeTab === 'profile' ? 'active' : ''}`}
+              onClick={() => handleTabChange('profile')}
+              style={{ animationDelay: isMounted ? '0.3s' : '0s' }}
+            >
+              <ProfileIcon />
+              Profile Management
+            </button>
+            <button
+              className={`tab-btn connect-bank-btn ${activeTab === 'account' ? 'active' : ''}`}
+              onClick={() => handleTabChange('account')}
+              style={{ animationDelay: isMounted ? '0.35s' : '0s' }}
+            >
+              <AccountIcon />
+              Account Management
+            </button>
             </div>
           </div>
 
@@ -233,9 +229,8 @@ function Dashboard() {
                 )}
               </div>
             )}
-          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

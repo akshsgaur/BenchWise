@@ -34,12 +34,21 @@ function FinancialOverview({ refreshKey = 0 }) {
   const fetchAccounts = async () => {
     try {
       setLoading(true);
+      setError(''); // Clear any previous errors
       const response = await plaidAPI.getAccounts();
-      setAccounts(response.data.accounts);
+      setAccounts(response.data.accounts || []);
       setBankConnections(response.data.bankConnections || []);
     } catch (error) {
       console.error('Error fetching accounts:', error);
-      setError('Failed to load account information');
+      // Only set error for actual errors (not 404 or empty responses)
+      // If it's a 404 or the user simply has no accounts, that's fine
+      if (error.response?.status !== 404 && error.response?.status !== 401) {
+        setError('Failed to load account information');
+      } else {
+        // User has no accounts yet - this is normal, not an error
+        setAccounts([]);
+        setBankConnections([]);
+      }
     } finally {
       setLoading(false);
     }

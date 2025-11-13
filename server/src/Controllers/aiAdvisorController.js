@@ -535,6 +535,39 @@ const testPythonService = async (req, res) => {
       };
     }
     
+    // Test 3: POST endpoint (with a test request)
+    try {
+      const testPostResponse = await axios.post(
+        queryUrl,
+        {
+          user_id: 'test-user-id',
+          question: 'test question',
+          conversation_history: null
+        },
+        {
+          timeout: 15000,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      results.tests.postEndpoint = {
+        status: 'success',
+        statusCode: testPostResponse.status,
+        hasData: !!testPostResponse.data,
+        message: 'POST endpoint is working'
+      };
+    } catch (postError) {
+      results.tests.postEndpoint = {
+        status: 'failed',
+        error: postError.message,
+        code: postError.code,
+        statusCode: postError.response?.status,
+        responseData: postError.response?.data,
+        message: 'POST endpoint failed - this is likely the cause of your 502 error'
+      };
+    }
+    
     // Test 2: DNS/Connectivity
     try {
       const testUrl = new URL(PYTHON_AI_SERVICE_URL);

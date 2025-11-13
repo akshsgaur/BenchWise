@@ -10,13 +10,34 @@ const askQuestion = async (req, res) => {
   // Declare variables outside try block so they're accessible in catch block
   const userId = req.user._id.toString();
   let userMessageSaved = false;
+  // Note: Render has a 30-second gateway timeout, so we use 25 seconds to avoid 502 errors
+  const timeout = process.env.NODE_ENV === 'production' ? 25000 : 60000;
+  
+  // Validate Python service URL is configured (especially in production)
+  const isProduction = process.env.NODE_ENV === 'production';
+  const isLocalhost = PYTHON_AI_SERVICE_URL?.includes('localhost') ?? false;
+  
+  if (isProduction && isLocalhost) {
+    const errorMsg = `Python AI Service URL is not configured for production. Current value: ${PYTHON_AI_SERVICE_URL}. Please set PYTHON_AI_SERVICE_URL environment variable in Render dashboard.`;
+    console.error(`[ERROR] ${errorMsg}`);
+    return res.status(500).json({
+      success: false,
+      message: 'AI service is not configured. Please contact support.',
+      error: 'SERVICE_NOT_CONFIGURED',
+      details: errorMsg
+    });
+  }
   
   try {
     const { question } = req.body;
 
-    console.log('AI Advisor - User ID:', userId);
-    console.log('AI Advisor - Question:', question);
-    console.log('AI Advisor - User object:', req.user);
+    console.log('[INFO] AI Advisor Request:', {
+      userId,
+      question: question?.substring(0, 100),
+      pythonServiceUrl: PYTHON_AI_SERVICE_URL,
+      timeout: `${timeout}ms`,
+      nodeEnv: process.env.NODE_ENV
+    });
 
     if (!question || !question.trim()) {
       return res.status(400).json({
@@ -42,7 +63,7 @@ const askQuestion = async (req, res) => {
     }
 
     // Call Python AI chatbot service
-    console.log(`[INFO] Calling Python service at ${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`);
+    console.log(`[INFO] Calling Python service at ${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query (timeout: ${timeout}ms)`);
     const response = await axios.post(
       `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`,
       {
@@ -51,7 +72,7 @@ const askQuestion = async (req, res) => {
         conversation_history: req.body.conversation_history || null
       },
       {
-        timeout: 60000, // 60 second timeout for AI processing
+        timeout: timeout,
         headers: {
           'Content-Type': 'application/json'
         }
@@ -148,6 +169,75 @@ const askQuestion = async (req, res) => {
         success: false,
         message: 'AI service is currently unavailable. Please make sure the Python service is running on port 8001.',
         error: 'SERVICE_UNAVAILABLE'
+      });
+    }
+
+    // Handle timeout errors (common on Render due to 30-second gateway timeout)
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+      console.error(`[ERROR] Request to Python service timed out after ${timeout}ms`);
+      
+      // Save error message to database
+      if (userMessageSaved) {
+        try {
+          await ChatMessage.create({
+            userId: userId,
+            role: 'error',
+            content: 'The AI service took too long to respond. This may happen if the service is starting up or processing a complex query. Please try again in a moment.',
+            metadata: {
+              responseType: 'plain',
+              error: 'TIMEOUT'
+            }
+          });
+        } catch (dbError) {
+          console.error('[ERROR] Failed to save error message:', dbError);
+        }
+      }
+      
+      return res.status(504).json({
+        success: false,
+        message: 'The AI service took too long to respond. This may happen if the service is starting up or processing a complex query. Please try again in a moment.',
+        error: 'TIMEOUT'
+      });
+    }
+
+    // Handle 502 Bad Gateway (Render gateway timeout or service unavailable)
+    if (error.response?.status === 502 || error.code === 'ERR_BAD_RESPONSE') {
+      const fullUrl = `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`;
+      console.error(`[ERROR] Received 502 Bad Gateway from Python service.`);
+      console.error(`[ERROR] Service URL: ${fullUrl}`);
+      console.error(`[ERROR] This usually means:`);
+      console.error(`[ERROR]   1. The Python service is not deployed or not running`);
+      console.error(`[ERROR]   2. The PYTHON_AI_SERVICE_URL is incorrect: ${PYTHON_AI_SERVICE_URL}`);
+      console.error(`[ERROR]   3. The service is spinning up (first request after inactivity on free tier)`);
+      console.error(`[ERROR]   4. The service crashed on startup`);
+      console.error(`[ERROR] Check Render dashboard logs for the Python service to diagnose.`);
+      
+      // Save error message to database
+      if (userMessageSaved) {
+        try {
+          await ChatMessage.create({
+            userId: userId,
+            role: 'error',
+            content: 'The AI service is temporarily unavailable. This may happen if the service is starting up or the service URL is misconfigured. Please try again in a moment.',
+            metadata: {
+              responseType: 'plain',
+              error: 'BAD_GATEWAY',
+              serviceUrl: PYTHON_AI_SERVICE_URL
+            }
+          });
+        } catch (dbError) {
+          console.error('[ERROR] Failed to save error message:', dbError);
+        }
+      }
+      
+      return res.status(502).json({
+        success: false,
+        message: 'The AI service is temporarily unavailable. This may happen if the service is starting up or the service URL is misconfigured. Please try again in a moment.',
+        error: 'BAD_GATEWAY',
+        diagnostic: {
+          serviceUrl: PYTHON_AI_SERVICE_URL,
+          suggestion: 'Check that: 1) Python service is deployed on Render, 2) PYTHON_AI_SERVICE_URL is set correctly in Node.js server environment variables, 3) Python service is running (check Render logs)'
+        }
       });
     }
 

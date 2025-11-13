@@ -7,8 +7,11 @@ const PYTHON_AI_SERVICE_URL = process.env.PYTHON_AI_SERVICE_URL || 'http://local
  * Ask the AI advisor a question about user's finances
  */
 const askQuestion = async (req, res) => {
+  // Declare variables outside try block so they're accessible in catch block
+  const userId = req.user._id.toString();
+  let userMessageSaved = false;
+  
   try {
-    const userId = req.user._id.toString();
     const { question } = req.body;
 
     console.log('AI Advisor - User ID:', userId);
@@ -23,7 +26,6 @@ const askQuestion = async (req, res) => {
     }
 
     // Save user message to database (even if request fails later)
-    let userMessageSaved = false;
     try {
       await ChatMessage.create({
         userId: userId,

@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { askQuestion, getChatHistory, cleanupOldMessages, deleteAllMessages } = require('../Controllers/aiAdvisorController');
+const { askQuestion, getChatHistory, cleanupOldMessages, deleteAllMessages, testPythonService } = require('../Controllers/aiAdvisorController');
 const { authenticateToken } = require('../middleware/auth');
 
-// All routes require authentication
+// Diagnostic endpoint (no auth required for easier testing)
+router.get('/test-python-service', testPythonService);
+
+// All other routes require authentication
 router.use(authenticateToken);
 
 // POST /api/v1/ai-advisor/query - Ask AI advisor a question

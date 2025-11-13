@@ -63,9 +63,22 @@ const askQuestion = async (req, res) => {
     }
 
     // Call Python AI chatbot service
-    console.log(`[INFO] Calling Python service at ${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query (timeout: ${timeout}ms)`);
+    const pythonServiceUrl = `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`;
+    const healthCheckUrl = `${PYTHON_AI_SERVICE_URL}/health`;
+    
+    console.log(`[INFO] Calling Python service at ${pythonServiceUrl} (timeout: ${timeout}ms)`);
+    
+    // Optional: Quick health check first (non-blocking, just for logging)
+    try {
+      const healthResponse = await axios.get(healthCheckUrl, { timeout: 5000 });
+      console.log(`[INFO] Python service health check passed:`, healthResponse.data);
+    } catch (healthError) {
+      console.warn(`[WARNING] Python service health check failed at ${healthCheckUrl}:`, healthError.message);
+      console.warn(`[WARNING] This might indicate the service is down or the URL is incorrect.`);
+    }
+    
     const response = await axios.post(
-      `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`,
+      pythonServiceUrl,
       {
         user_id: userId,
         question: question.trim(),
@@ -203,14 +216,27 @@ const askQuestion = async (req, res) => {
     // Handle 502 Bad Gateway (Render gateway timeout or service unavailable)
     if (error.response?.status === 502 || error.code === 'ERR_BAD_RESPONSE') {
       const fullUrl = `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`;
-      console.error(`[ERROR] Received 502 Bad Gateway from Python service.`);
-      console.error(`[ERROR] Service URL: ${fullUrl}`);
-      console.error(`[ERROR] This usually means:`);
-      console.error(`[ERROR]   1. The Python service is not deployed or not running`);
-      console.error(`[ERROR]   2. The PYTHON_AI_SERVICE_URL is incorrect: ${PYTHON_AI_SERVICE_URL}`);
-      console.error(`[ERROR]   3. The service is spinning up (first request after inactivity on free tier)`);
-      console.error(`[ERROR]   4. The service crashed on startup`);
-      console.error(`[ERROR] Check Render dashboard logs for the Python service to diagnose.`);
+      const healthUrl = `${PYTHON_AI_SERVICE_URL}/health`;
+      
+      console.error(`[ERROR] ========== 502 Bad Gateway Error ==========`);
+      console.error(`[ERROR] Full request URL: ${fullUrl}`);
+      console.error(`[ERROR] Health check URL: ${healthUrl}`);
+      console.error(`[ERROR] Configured PYTHON_AI_SERVICE_URL: ${PYTHON_AI_SERVICE_URL}`);
+      console.error(`[ERROR]`);
+      console.error(`[ERROR] Possible causes:`);
+      console.error(`[ERROR]   1. Wrong URL - You may have set PYTHON_AI_SERVICE_URL to your Node.js server URL instead of the Python service URL`);
+      console.error(`[ERROR]      - Node.js server: https://benchwise-server.onrender.com (or similar)`);
+      console.error(`[ERROR]      - Python service should be: https://benchwise-chatbot-service.onrender.com (or similar)`);
+      console.error(`[ERROR]   2. Python service not deployed - Check Render dashboard for a separate Python service`);
+      console.error(`[ERROR]   3. Python service crashed - Check Python service logs in Render dashboard`);
+      console.error(`[ERROR]   4. Service spinning up - First request after inactivity (free tier)`);
+      console.error(`[ERROR]`);
+      console.error(`[ERROR] To verify:`);
+      console.error(`[ERROR]   1. Go to Render dashboard → Find your Python service`);
+      console.error(`[ERROR]   2. Copy the service URL (should be different from Node.js server)`);
+      console.error(`[ERROR]   3. Test health endpoint: curl ${healthUrl}`);
+      console.error(`[ERROR]   4. Update PYTHON_AI_SERVICE_URL in Node.js server environment variables`);
+      console.error(`[ERROR] ===========================================`);
       
       // Save error message to database
       if (userMessageSaved) {
@@ -222,7 +248,8 @@ const askQuestion = async (req, res) => {
             metadata: {
               responseType: 'plain',
               error: 'BAD_GATEWAY',
-              serviceUrl: PYTHON_AI_SERVICE_URL
+              serviceUrl: PYTHON_AI_SERVICE_URL,
+              fullUrl: fullUrl
             }
           });
         } catch (dbError) {
@@ -230,13 +257,27 @@ const askQuestion = async (req, res) => {
         }
       }
       
+      // Check if URL looks like it might be wrong (contains common Node.js server patterns)
+      const mightBeWrongUrl = PYTHON_AI_SERVICE_URL.includes('benchwise-server') || 
+                              PYTHON_AI_SERVICE_URL.includes('benchwise.onrender.com') ||
+                              (!PYTHON_AI_SERVICE_URL.includes('chatbot') && !PYTHON_AI_SERVICE_URL.includes('python'));
+      
       return res.status(502).json({
         success: false,
-        message: 'The AI service is temporarily unavailable. This may happen if the service is starting up or the service URL is misconfigured. Please try again in a moment.',
+        message: 'The AI service is temporarily unavailable. This may happen if the service is starting up or the service URL is misconfigured.',
         error: 'BAD_GATEWAY',
         diagnostic: {
-          serviceUrl: PYTHON_AI_SERVICE_URL,
-          suggestion: 'Check that: 1) Python service is deployed on Render, 2) PYTHON_AI_SERVICE_URL is set correctly in Node.js server environment variables, 3) Python service is running (check Render logs)'
+          configuredUrl: PYTHON_AI_SERVICE_URL,
+          requestUrl: fullUrl,
+          healthCheckUrl: healthUrl,
+          warning: mightBeWrongUrl ? 'The configured URL might be incorrect. Make sure PYTHON_AI_SERVICE_URL points to your Python chatbot service, not your Node.js server.' : null,
+          steps: [
+            '1. Go to Render dashboard and find your Python chatbot service',
+            '2. Copy the service URL (e.g., https://benchwise-chatbot-service.onrender.com)',
+            '3. Update PYTHON_AI_SERVICE_URL in your Node.js server environment variables',
+            '4. Test the health endpoint: curl ' + healthUrl,
+            '5. Redeploy your Node.js server'
+          ]
         }
       });
     }
@@ -454,9 +495,89 @@ const deleteAllMessages = async (req, res) => {
   }
 };
 
+/**
+ * Diagnostic endpoint to test Python service connectivity
+ */
+const testPythonService = async (req, res) => {
+  try {
+    const healthUrl = `${PYTHON_AI_SERVICE_URL}/health`;
+    const queryUrl = `${PYTHON_AI_SERVICE_URL}/api/v1/chatbot/query`;
+    
+    console.log(`[DIAGNOSTIC] Testing Python service connectivity...`);
+    console.log(`[DIAGNOSTIC] Health URL: ${healthUrl}`);
+    console.log(`[DIAGNOSTIC] Query URL: ${queryUrl}`);
+    console.log(`[DIAGNOSTIC] Configured URL: ${PYTHON_AI_SERVICE_URL}`);
+    
+    const results = {
+      configuredUrl: PYTHON_AI_SERVICE_URL,
+      healthUrl: healthUrl,
+      queryUrl: queryUrl,
+      timestamp: new Date().toISOString(),
+      tests: {}
+    };
+    
+    // Test 1: Health check
+    try {
+      const healthResponse = await axios.get(healthUrl, { timeout: 10000 });
+      results.tests.healthCheck = {
+        status: 'success',
+        statusCode: healthResponse.status,
+        data: healthResponse.data,
+        message: 'Health check passed'
+      };
+    } catch (healthError) {
+      results.tests.healthCheck = {
+        status: 'failed',
+        error: healthError.message,
+        code: healthError.code,
+        statusCode: healthError.response?.status,
+        message: 'Health check failed - service may be down or unreachable'
+      };
+    }
+    
+    // Test 2: DNS/Connectivity
+    try {
+      const testUrl = new URL(PYTHON_AI_SERVICE_URL);
+      results.tests.dns = {
+        status: 'success',
+        hostname: testUrl.hostname,
+        protocol: testUrl.protocol,
+        message: 'URL is valid'
+      };
+    } catch (dnsError) {
+      results.tests.dns = {
+        status: 'failed',
+        error: dnsError.message,
+        message: 'Invalid URL format'
+      };
+    }
+    
+    // Overall status
+    const allTestsPassed = Object.values(results.tests).every(test => test.status === 'success');
+    results.overallStatus = allTestsPassed ? 'healthy' : 'unhealthy';
+    
+    res.json({
+      success: true,
+      data: results,
+      recommendation: allTestsPassed 
+        ? 'Python service is reachable and healthy'
+        : 'Python service is not reachable. Check Render dashboard logs for the Python service.'
+    });
+    
+  } catch (error) {
+    console.error('[DIAGNOSTIC] Error testing Python service:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to test Python service',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   askQuestion,
   getChatHistory,
   cleanupOldMessages,
-  deleteAllMessages
+  deleteAllMessages,
+  testPythonService
 };

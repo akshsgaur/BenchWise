@@ -17,6 +17,11 @@ function FinancialOverview({ refreshKey = 0 }) {
   const [insight, setInsight] = useState(null);
   const [insightLoading, setInsightLoading] = useState(true);
   const [insightError, setInsightError] = useState('');
+  const [syncingTransactions, setSyncingTransactions] = useState(false);
+  const [generatingInsights, setGeneratingInsights] = useState(false);
+  const [syncError, setSyncError] = useState('');
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const [insightSuccess, setInsightSuccess] = useState(false);
 
   useEffect(() => {
     fetchAccounts();
@@ -144,6 +149,77 @@ function FinancialOverview({ refreshKey = 0 }) {
     fetchTransactions(transactionsPeriod, newPage);
   };
 
+  const handleSyncTransactions = async () => {
+    try {
+      setSyncingTransactions(true);
+      setSyncError('');
+      
+      console.log('[INFO] Syncing transactions...');
+      
+      // Start both the API call and a minimum delay timer
+      const syncPromise = transactionAPI.triggerManualSync();
+      const delayPromise = new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // Wait for both to complete
+      const [response] = await Promise.all([syncPromise, delayPromise]);
+      
+      if (response.data.success) {
+        console.log('[INFO] Transaction sync completed successfully');
+        
+        // Refresh transactions and accounts
+        await Promise.all([
+          fetchTransactions(transactionsPeriod, 1),
+          fetchAccounts()
+        ]);
+        
+        // Show success popup
+        setSyncSuccess(true);
+        setTimeout(() => {
+          setSyncSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || 'Failed to sync transactions');
+      }
+    } catch (error) {
+      console.error('Error syncing transactions:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to sync transactions';
+      setSyncError(errorMessage);
+    } finally {
+      setSyncingTransactions(false);
+    }
+  };
+
+  const handleGenerateInsights = async () => {
+    try {
+      setGeneratingInsights(true);
+      setSyncError('');
+      
+      console.log('[INFO] Generating AI insights...');
+      const response = await insightsAPI.generateInsights();
+      
+      if (response.data.success) {
+        console.log('[INFO] AI insights generated successfully');
+        
+        // Refresh insights
+        await fetchInsight();
+        
+        // Show success popup
+        setInsightSuccess(true);
+        setTimeout(() => {
+          setInsightSuccess(false);
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || 'Failed to generate insights');
+      }
+    } catch (error) {
+      console.error('Error generating insights:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate AI insights';
+      setSyncError(errorMessage);
+    } finally {
+      setGeneratingInsights(false);
+    }
+  };
+
   const getTotalBalance = () => {
     if (!accounts || !Array.isArray(accounts)) return 0;
     return accounts.reduce((total, account) => total + (account.balance?.current || 0), 0);
@@ -210,6 +286,71 @@ function FinancialOverview({ refreshKey = 0 }) {
         <h2>Financial Overview</h2>
         <p>Your complete financial picture at a glance</p>
       </div>
+
+      {(syncingTransactions || generatingInsights || syncSuccess || insightSuccess) && (
+        <div className="popup-container">
+          {syncingTransactions && (
+            <div className="sync-loading-popup">
+              <div className="sync-popup-content">
+                <div className="popup-spinner"></div>
+                <div className="popup-text">
+                  <h4>Syncing Transactions</h4>
+                  <p>Fetching transactions from your bank accounts...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {generatingInsights && (
+            <div className="sync-loading-popup">
+              <div className="sync-popup-content">
+                <div className="popup-spinner"></div>
+                <div className="popup-text">
+                  <h4>Generating Insights</h4>
+                  <p>Analyzing your financial data with AI...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {syncSuccess && (
+            <div className="sync-success-popup">
+              <div className="sync-popup-content success">
+                <div className="popup-success-icon">✓</div>
+                <div className="popup-text">
+                  <h4>Transactions Synced</h4>
+                  <p>Your transactions have been updated successfully!</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {insightSuccess && (
+            <div className="sync-success-popup">
+              <div className="sync-popup-content success">
+                <div className="popup-success-icon">✓</div>
+                <div className="popup-text">
+                  <h4>Insights Generated</h4>
+                  <p>AI insights have been generated successfully!</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {syncError && (
+        <div className="error-message" style={{ 
+          padding: '12px', 
+          margin: '16px 0', 
+          backgroundColor: '#fee', 
+          border: '1px solid #fcc',
+          borderRadius: '8px',
+          color: '#c33'
+        }}>
+          {syncError}
+        </div>
+      )}
 
       {/* Connected Banks Section */}
       <div className="connected-banks-section">
@@ -323,7 +464,21 @@ function FinancialOverview({ refreshKey = 0 }) {
                   <p>Review your recent financial activity</p>
                 </div>
               </div>
-              <div className="period-selector">
+              <div className="widget-actions">
+                <button 
+                  className="widget-action-btn" 
+                  onClick={handleSyncTransactions}
+                  disabled={syncingTransactions}
+                >
+                  {syncingTransactions ? (
+                    <>
+                      <span className="btn-spinner"></span>
+                      Syncing...
+                    </>
+                  ) : (
+                    'Sync Transactions'
+                  )}
+                </button>
                 <select 
                   value={transactionsPeriod} 
                   onChange={(e) => handleTransactionsPeriodChange(e.target.value)}
@@ -413,15 +568,33 @@ function FinancialOverview({ refreshKey = 0 }) {
 
       <div className="ai-analytics-section">
         <div className="ai-analytics-header">
-          <div>
+          <div className="ai-analytics-title">
             <h3>AI Analytics and Insights</h3>
             <p>Personalized guidance generated from your synced data</p>
           </div>
-          <div className="ai-analytics-meta">
-            {insightLoading && <span>Updating insights…</span>}
-            {!insightLoading && insight?.generatedAt && (
-              <span>Last updated {formatGeneratedTime(insight.generatedAt)}</span>
-            )}
+          <div className="ai-analytics-actions">
+            <div className="ai-analytics-actions-group">
+              <button 
+                className="generate-insights-btn" 
+                onClick={handleGenerateInsights}
+                disabled={generatingInsights}
+              >
+                {generatingInsights ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Insights'
+                )}
+              </button>
+              {insightLoading && (
+                <span className="ai-analytics-status-inline">Updating insights…</span>
+              )}
+              {!insightLoading && insight?.generatedAt && (
+                <span className="ai-analytics-status-inline">Last updated {formatGeneratedTime(insight.generatedAt)}</span>
+              )}
+            </div>
           </div>
         </div>
 

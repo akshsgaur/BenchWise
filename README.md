@@ -2,8 +2,8 @@
 ### AI-Powered Personal Finance for the Gig Economy
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
-![AI](https://img.shields.io/badge/AI-Claude%20%2B%20MCP-green.svg)
+![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)
+![AI](https://img.shields.io/badge/AI-OpenAI-green.svg)
 ![Status](https://img.shields.io/badge/status-development-orange.svg)
 
 > **Empowering 65+ million American freelancers and gig workers with intelligent financial tools designed for variable income.**
@@ -143,12 +143,11 @@ BenchWise leverages AI to provide enterprise-grade financial planning for everyo
 - Claude creates personalized tax analysis from returned data
 
 **Key Technologies**:
-- **Model Context Protocol (MCP)**: "USB-C for LLMs" - standardized tool integration
-- **Claude AI**: Advanced reasoning for personalized financial advice with human-like judgment
+- **OpenAI API**: Advanced AI reasoning for personalized financial advice
 - **Plaid API**: Secure bank account and transaction data
-- **React + TypeScript**: Modern, responsive web interface
-- **Python FastAPI**: High-performance backend services
-- **PostgreSQL**: Encrypted financial data storage
+- **React**: Modern, responsive web interface
+- **Node.js + Express**: High-performance backend services
+- **MongoDB**: Secure financial data storage
 - **Azure OpenAI**: Enterprise-grade AI with secure containers
 
 ### Data Security & Privacy

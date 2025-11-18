@@ -75,6 +75,8 @@ export const transactionAPI = {
 export const insightsAPI = {
   getLatestInsight: () => api.get('/insights/latest'),
   getDashboardOverview: () => api.get('/insights/dashboard'),
+  syncAndAnalyze: () => api.post('/insights/sync-and-analyze'),
+  generateInsights: () => api.post('/insights/generate'),
 };
 
 export const aiAdvisorAPI = {

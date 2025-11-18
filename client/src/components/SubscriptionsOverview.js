@@ -7,6 +7,7 @@ function SubscriptionsOverview() {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [error, setError] = useState(null);
+  const [analyzeSuccess, setAnalyzeSuccess] = useState(false);
 
   // Fetch existing analysis on component mount
   useEffect(() => {
@@ -39,17 +40,33 @@ function SubscriptionsOverview() {
       const response = await subscriptionAPI.analyzeSubscriptions();
       if (response.data.success) {
         setAnalysis(response.data.data.analysis);
-        // Show success message
-        alert('Subscription analysis completed successfully!');
+        // Show success popup
+        setAnalyzeSuccess(true);
+        setTimeout(() => {
+          setAnalyzeSuccess(false);
+        }, 3000);
       }
     } catch (err) {
       console.error('Error analyzing subscriptions:', err);
       const errorMessage = err.response?.data?.message || 'Failed to analyze subscriptions';
       setError(errorMessage);
-      alert(`Error: ${errorMessage}`);
     } finally {
       setAnalyzing(false);
     }
+  };
+
+  const formatGeneratedTime = (timestamp) => {
+    if (!timestamp) return null;
+    const parsed = new Date(timestamp);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+    return parsed.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   const formatCurrency = (amount) => {
@@ -99,14 +116,56 @@ function SubscriptionsOverview() {
       <div className="overview-header">
         <h2>Subscriptions Overview</h2>
         <p>Track and manage your recurring subscriptions and bills</p>
-        <button 
-          className="analyze-btn" 
-          onClick={handleAnalyze}
-          disabled={analyzing}
-        >
-          {analyzing ? 'Analyzing...' : 'Analyze Subscriptions'}
-        </button>
+        <div className="header-actions">
+          <div className="header-actions-group">
+            <button 
+              className="analyze-subscriptions-btn" 
+              onClick={handleAnalyze}
+              disabled={analyzing}
+            >
+              {analyzing ? (
+                <>
+                  <span className="btn-spinner"></span>
+                  Analyzing...
+                </>
+              ) : (
+                'Analyze Subscriptions'
+              )}
+            </button>
+            {analysis?.generatedAt && (
+              <span className="subscriptions-status-inline">Last analyzed {formatGeneratedTime(analysis.generatedAt)}</span>
+            )}
+          </div>
+        </div>
       </div>
+
+      {(analyzing || analyzeSuccess) && (
+        <div className="popup-container">
+          {analyzing && (
+            <div className="sync-loading-popup">
+              <div className="sync-popup-content">
+                <div className="popup-spinner"></div>
+                <div className="popup-text">
+                  <h4>Analyzing Subscriptions</h4>
+                  <p>Detecting recurring subscriptions from your transactions...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {analyzeSuccess && (
+            <div className="sync-success-popup">
+              <div className="sync-popup-content success">
+                <div className="popup-success-icon">✓</div>
+                <div className="popup-text">
+                  <h4>Analysis Complete</h4>
+                  <p>Subscription analysis completed successfully!</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="error-message" style={{ 

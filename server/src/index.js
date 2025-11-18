@@ -22,6 +22,7 @@ const integrationRoutes = require('./Routes/integrationRoutes');
 const transactionRoutes = require('./Routes/transactionRoutes');
 const insightRoutes = require('./Routes/insightRoutes');
 const aiAdvisorRoutes = require('./Routes/aiAdvisorRoutes');
+const subscriptionRoutes = require('./Routes/subscriptionRoutes');
 
 // Import passport configuration
 require('./Config/passport');
@@ -84,6 +85,7 @@ app.use('/api/integration', integrationRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/insights', insightRoutes);
 app.use('/api/v1/ai-advisor', aiAdvisorRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {

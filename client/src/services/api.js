@@ -83,4 +83,10 @@ export const aiAdvisorAPI = {
   deleteAllMessages: () => api.delete('/v1/ai-advisor/messages'),
 };
 
+export const subscriptionAPI = {
+  analyzeSubscriptions: () => api.post('/subscriptions/analyze'),
+  getSubscriptionAnalysis: () => api.get('/subscriptions/analysis'),
+  getSubscriptionHistory: () => api.get('/subscriptions/history'),
+};
+
 export default api;
